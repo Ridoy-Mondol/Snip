@@ -27,7 +27,7 @@ export type NewBlogProps = {
 
 
 
-export default function BlogPage({ handleSubmit }: NewBlogProps) {
+export default function CreateBlogPage({ handleSubmit }: NewBlogProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [showDropzone, setShowDropzone] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);

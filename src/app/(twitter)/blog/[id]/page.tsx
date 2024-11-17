@@ -221,9 +221,9 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
             <span style={{ fontSize: "20px", fontWeight: "bold", margin: "0 8px" }}>·</span>
             <MdMenuBook size={16} style={{ marginRight: "0px" }} />
             <span>{calculateReadTime(blog.content)}</span>
-            <span style={{ fontSize: "20px", fontWeight: "bold", margin: "0 8px" }}>·</span>
+            {/* <span style={{ fontSize: "20px", fontWeight: "bold", margin: "0 8px" }}>·</span>
             <FiFileText size={16} style={{ marginRight: "0px" }} />
-            <span>{1234} views</span>
+            <span>{1234} views</span> */}
           </Typography>
 
           {/* Author Section */}

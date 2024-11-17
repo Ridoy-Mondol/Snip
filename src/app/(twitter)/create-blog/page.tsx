@@ -10,14 +10,22 @@ import Picker from "@emoji-mart/react";
 
 import CircularLoading from "@/components/misc/CircularLoading"; 
 import { createBlog } from "@/utilities/fetch"; 
-import { NewBlogProps } from "@/types/NewBlogProps";
+// import { NewBlogProps } from "@/types/NewBlogProps";
+import { UserProps } from "@/types/UserProps";
 import Uploader from "@/components/misc/Uploader";
 import { uploadFile } from "@/utilities/storage"; 
 import ProgressCircle from "@/components/misc/ProgressCircle";
 import { AuthContext } from "../layout";
 import { Editor } from "@tinymce/tinymce-react";
 import { ThemeContext } from "@/app/providers";
-import { set } from "date-fns";
+
+
+export type NewBlogProps = {
+  token: UserProps; 
+  handleSubmit?: () => void;
+};
+
+
 
 export default function BlogPage({ handleSubmit }: NewBlogProps) {
   const [showPicker, setShowPicker] = useState(false);

@@ -40,13 +40,17 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
 
   const { token, isPending } = useContext(AuthContext);
 
+  const HOST_URL = process.env.NEXT_PUBLIC_HOST_URL;
+
   useEffect(() => {
     if (!id) return;
 
     async function fetchBlogData() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/blogs/${id}`);
+        const response = await fetch(`/api/blogs/${id}`, {
+          method: "GET",
+        });
         const data = await response.json();
         if (data.success) {
           setBlog(data.blog);
@@ -67,7 +71,7 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
     async function fetchRelatedBlogs(category: string) {
       try {
         setLoading(true);
-        const response = await fetch(`/api/blogs`);
+        const response = await fetch(`${HOST_URL}/api/blogs`);
         const data = await response.json();
         if (data.success) {
           const filteredBlogs = data.blogs

@@ -10,8 +10,4 @@ export type BlogProps = {
   authorId: string;
   };
   
-  export type NewBlogProps = {
-    token: UserProps;
-    handleSubmit?: () => void;
-  };
   

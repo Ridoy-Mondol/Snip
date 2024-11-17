@@ -1,6 +1,7 @@
 "use client";
+
 import { useState, useEffect, useContext } from "react";
-import { TextField } from "@mui/material";
+import { TextField, MenuItem } from "@mui/material";
 import { useFormik } from "formik";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
@@ -27,11 +28,11 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
 
   const { token, isPending } = useContext(AuthContext);
   const queryClient = useQueryClient();
-
   const { theme } = useContext(ThemeContext);
 
   const { id: blogId } = params;
 
+  // Fetch blog data
   useEffect(() => {
     async function fetchBlogData() {
       try {
@@ -52,6 +53,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
     fetchBlogData();
   }, [blogId]);
 
+  // Mutation to update the blog
   const mutation = useMutation({
     mutationFn: updateBlog,
     onSuccess: () => {
@@ -59,11 +61,12 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
       window.location.href = `/blog/${blogId}`;
     },
     onError: (error) => {
-      console.log(error);
+      console.error("Failed to update blog:", error);
       setLoading(false);
     },
   });
 
+  // Handle photo upload
   const handlePhotoChange = (file: File) => {
     if (file.size > 1048576) {
       alert("The image size should not exceed 1MB.");
@@ -73,6 +76,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
     setImageError(null);
   };
 
+  // Formik setup
   const formik = useFormik({
     initialValues: {
       title: blog?.title || "",
@@ -82,7 +86,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
     },
     enableReinitialize: true,
     onSubmit: async (values) => {
-      const updateData: { 
+      const updateData: {
         id: string;
         title?: string;
         category?: string;
@@ -110,11 +114,6 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
         setPhotoFile(null);
       }
 
-      if (Object.keys(updateData).length === 0) {
-        console.log("No fields updated.");
-        return;
-      }
-
       try {
         await mutation.mutateAsync(updateData);
         setCount(0);
@@ -126,23 +125,22 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
     },
   });
 
+  // Handle text change
   const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-    const plainText = inputValue
-    .replace(/<[^>]*>?/gm, "") 
-    .replace(/\s+/g, ""); 
+    const plainText = inputValue.replace(/<[^>]*>?/gm, "").replace(/\s+/g, "");
     setCount(plainText.length);
     formik.handleChange(e);
   };
 
+  // Handle editor change
   const handleEditorChange = (content: string) => {
-    const plainText = content
-        .replace(/<[^>]*>?/gm, "")
-        .replace(/\s+/g, "");
-        setCount(plainText.length);
-        formik.setFieldValue("content", content);
+    const plainText = content.replace(/<[^>]*>?/gm, "").replace(/\s+/g, "");
+    setCount(plainText.length);
+    formik.setFieldValue("content", content);
   };
 
+  // Loading state
   if (isPending || isLoading || !token) {
     return <CircularLoading />;
   }
@@ -150,7 +148,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
   return (
     <main>
       <h1 className="page-name">Update Blog</h1>
-      <div className="new-blog-form" style={{padding: "20px"}}>
+      <div className="new-blog-form" style={{ padding: "20px" }}>
         <form onSubmit={formik.handleSubmit}>
           <div className="input">
             <TextField
@@ -162,18 +160,51 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
               onChange={customHandleChange}
             />
           </div>
+
           <div className="input">
             <TextField
+              select
               label="Category"
               variant="standard"
               fullWidth
               name="category"
               value={formik.values.category}
-              onChange={customHandleChange}
-            />
+              onChange={formik.handleChange}
+              error={formik.touched.category && Boolean(formik.errors.category)}
+              helperText={
+                formik.touched.category &&
+                typeof formik.errors.category === "string"
+                  ? formik.errors.category
+                  : ""
+              }
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    style: {
+                      maxHeight: 200,
+                    },
+                  },
+                },
+              }}
+            >
+              {["Sports", "Technology", "Health", "Education", "Entertainment"].map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
           </div>
+
           <div className="input">
-          <p style={{ margin: "10px 0",fontSize: "16px", color: theme === "dark" ? "gray" : "#1e1e1e" }}>Content</p>
+            <p
+              style={{
+                margin: "10px 0",
+                fontSize: "16px",
+                color: theme === "dark" ? "gray" : "#1e1e1e",
+              }}
+            >
+              Content
+            </p>
             <Editor
               apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
               value={formik.values.content}
@@ -181,50 +212,39 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
                 height: 300,
                 menubar: false,
                 plugins: [
-                  "link", 
-                  "image", 
-                  "lists", 
-                  "code", 
-                  "emoticons", 
-                  "table", 
-                  "media", 
-                  "fullscreen", 
-                  "preview", 
-                  "anchor", 
-                  "searchreplace", 
-                  "visualblocks", 
-                  "wordcount", 
-                  "insertdatetime"
+                  "link",
+                  "image",
+                  "lists",
+                  "code",
+                  "emoticons",
+                  "table",
+                  "media",
+                  "fullscreen",
+                  "preview",
+                  "anchor",
+                  "searchreplace",
+                  "visualblocks",
+                  "wordcount",
+                  "insertdatetime",
                 ],
                 toolbar:
-                   "undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table emoticons | code fullscreen preview | insertdatetime | searchreplace"
-                ,
+                  "undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table emoticons | code fullscreen preview | insertdatetime | searchreplace",
                 content_style: `
-                 body {
-                   background-color: ${theme === "dark" ? "black" : "white"} !important;
-                   color: ${theme === "dark" ? "white" : "black"};
-                   font-family: Arial, sans-serif;
-                   font-size: 14px;
-                 }
-                 .mce-content-body {
-                   background-color: ${theme === "dark" ? "black" : "white"} !important;
-                   color: ${theme === "dark" ? "white" : "black"};
-                 }
-               `           ,
-               skin: theme === "dark" ? "oxide-dark" : "oxide",
-               setup: (editor) => {
-                editor.on('init', () => {
-                const editorElement = editor.contentDocument.body;
-                editorElement.style.backgroundColor = theme === "dark" ? "black" : "white";
-                editorElement.style.color = theme === "dark" ? "white" : "black";
-               });
-            },
-            content_css: theme === "dark" ? "dark" : "",
-            branding: false,
-            }}
-            onEditorChange={handleEditorChange}
+                  body {
+                    background-color: ${theme === "dark" ? "black" : "white"} !important;
+                    color: ${theme === "dark" ? "white" : "black"};
+                    font-family: Arial, sans-serif;
+                    font-size: 14px;
+                  }
+                `,
+                skin: theme === "dark" ? "oxide-dark" : "oxide",
+                content_css: theme === "dark" ? "dark" : "",
+                branding: false,
+              }}
+              onEditorChange={handleEditorChange}
             />
           </div>
+
           <div className="input-additions">
             <button
               onClick={(e) => {
@@ -249,15 +269,13 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
               Update Blog
             </button>
           </div>
+
           {showPicker && (
             <div className="emoji-picker">
               <Picker
                 data={data}
                 onEmojiSelect={(emoji: any) => {
-                  formik.setFieldValue(
-                    "content",
-                    formik.values.content + emoji.native
-                  );
+                  formik.setFieldValue("content", formik.values.content + emoji.native);
                   setShowPicker(false);
                   setCount(count + emoji.native.length);
                 }}
@@ -265,6 +283,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
               />
             </div>
           )}
+
           {showDropzone && <Uploader handlePhotoChange={handlePhotoChange} />}
         </form>
       </div>

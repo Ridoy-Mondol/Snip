@@ -23,6 +23,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
   const [count, setCount] = useState(0);
   const [blog, setBlog] = useState<any>(null);
   const [isLoading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const { token, isPending } = useContext(AuthContext);
   const queryClient = useQueryClient();
@@ -69,6 +70,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
       return;
     }
     setPhotoFile(file);
+    setImageError(null);
   };
 
   const formik = useFormik({

@@ -7,10 +7,10 @@ export async function GET(request: NextRequest) {
     try {
         const blogs = await prisma.blog.findMany({
             orderBy: {
-                createdAt: 'desc', // Sort by creation date in descending order
+                createdAt: 'desc',
             },
             include: {
-                author: true, // Include the 'author' relation
+                author: true,
             },
         });
 

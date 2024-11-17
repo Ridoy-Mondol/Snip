@@ -96,7 +96,7 @@ export default function BlogPage({username}: {username: string}) {
                 <CardMedia
                   component="img"
                   height="140"
-                  image={getFullURL(blog.imageUrl || "../../../public/assets/egg.jpg")}
+                  image={blog.imageUrl ?getFullURL(blog.imageUrl) : ""}
                   alt="Blog Image"
                   sx={{ borderRadius: 2 }}
                 />
@@ -137,7 +137,7 @@ export default function BlogPage({username}: {username: string}) {
                   onMouseLeave={handlePopoverClose}
                 >
                   <img
-                    src={getFullURL(blog.author.photoUrl || "../../../public/assets/egg.jpg")}
+                    src={blog.author.photoUrl ? getFullURL(blog.author.photoUrl) : ""}
                     alt={blog.author.username}
                     width={30}
                     height={30}

@@ -168,7 +168,7 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
         <CardMedia
           component="img"
           height="300"
-          image={getFullURL(blog.imageUrl || "/assets/default-blog.jpg")}
+          image={blog.imageUrl ? getFullURL(blog.imageUrl) : ""}
           alt="Blog Image"
           sx={{
             width: "100%",
@@ -245,7 +245,7 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
             >
               <Avatar
                 alt={blog.author.username}
-                src={getFullURL(blog.author.photoUrl || "../../../../../public/assets/egg.jpg")}
+                src={blog.author.photoUrl ? getFullURL(blog.author.photoUrl) : ""}
                 sx={{ width: 40, height: 40 }}
               />
               <Typography variant="h6">{blog.author.name}</Typography>

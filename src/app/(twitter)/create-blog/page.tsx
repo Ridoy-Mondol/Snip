@@ -23,6 +23,7 @@ export default function CreateBlogPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const { token, isPending } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
@@ -47,6 +48,7 @@ export default function CreateBlogPage() {
       return; 
     }
     setPhotoFile(file);
+    setImageError(null);
   };
 
   const validationSchema = yup.object({
@@ -66,6 +68,11 @@ export default function CreateBlogPage() {
     onSubmit: async (values, { resetForm }) => {
       if (!token?.id) {
         console.error("Author ID is missing.");
+        return;
+      }
+
+      if (!values.photoUrl && !photoFile) {
+        setImageError("Please upload an image.");
         return;
       }
 

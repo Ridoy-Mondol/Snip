@@ -242,7 +242,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
             >
               <FaRegSmile />
             </button>
-            <ProgressCircle maxChars={1000} count={count} />
+            <ProgressCircle maxChars={5000} count={count} />
             <button className="btn" type="submit">
               Update Blog
             </button>

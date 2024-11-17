@@ -22,7 +22,7 @@ export default function CreateBlogPage() {
   const [showDropzone, setShowDropzone] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [count, setCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const { token, isPending } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);

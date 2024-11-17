@@ -32,20 +32,44 @@ export default function BlogPage() {
 
   const { token } = useContext(AuthContext);
 
+  const HOST_URL = process.env.NEXT_PUBLIC_HOST_URL;
+
+  // useEffect(() => {
+  //   async function fetchBlogs() {
+  //     setLoading(true);
+  //     const response = await fetch(`${HOST_URL}/api/blogs`);
+  //     const data = await response.json();
+  //     if (data.success) {
+  //       setBlogs(data.blogs);
+  //       setLoading(false);
+  //     }
+  //     setLoading(false);
+  //   }
+
+  //   fetchBlogs();
+  // }, []);
+
   useEffect(() => {
-    async function fetchBlogs() {
+  async function fetchBlogs() {
+    try {
       setLoading(true);
-      const response = await fetch("/api/blogs");
+      const response = await fetch(`/api/blogs`);
       const data = await response.json();
       if (data.success) {
         setBlogs(data.blogs);
         setLoading(false);
+      } else {
+        console.error("Failed to fetch related blogs:", data.message);
+        setLoading(false);
       }
+    } catch (error) {
+      console.error("Error fetching related blogs:", error);
       setLoading(false);
     }
+  }
 
-    fetchBlogs();
-  }, []);
+  fetchBlogs();
+}, []); 
 
   const handlePopoverOpen = (
     e: React.MouseEvent<HTMLElement>,

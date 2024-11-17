@@ -245,7 +245,7 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
             >
               <Avatar
                 alt={blog.author.username}
-                src={getFullURL(blog.author.photoUrl || "/assets/default-avatar.jpg")}
+                src={getFullURL(blog.author.photoUrl || "../../../../../public/assets/egg.jpg")}
                 sx={{ width: 40, height: 40 }}
               />
               <Typography variant="h6">{blog.author.name}</Typography>

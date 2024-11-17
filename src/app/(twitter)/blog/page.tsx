@@ -9,7 +9,6 @@ import { Card, CardMedia, Typography, Container } from "@mui/material";
 import { MdArrowForward } from "react-icons/md";
 import { AuthContext } from "../layout";
 import CircularLoading from "@/components/misc/CircularLoading";
-
 interface BlogProps {
   id: string;
   title: string;
@@ -136,7 +135,7 @@ export default function BlogPage() {
                   onMouseLeave={handlePopoverClose}
                 >
                   <img
-                    src={getFullURL(blog.author.photoUrl || "/assets/egg.jpg")}
+                    src={getFullURL(blog.author.photoUrl || "../../../../public/assets/egg.jpg")}
                     alt={blog.author.username}
                     width={30}
                     height={30}

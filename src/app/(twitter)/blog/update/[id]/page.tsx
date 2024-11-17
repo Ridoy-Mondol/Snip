@@ -64,6 +64,10 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
   });
 
   const handlePhotoChange = (file: File) => {
+    if (file.size > 1048576) {
+      alert("The image size should not exceed 1MB.");
+      return;
+    }
     setPhotoFile(file);
   };
 

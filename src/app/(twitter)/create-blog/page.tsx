@@ -44,7 +44,7 @@ export default function CreateBlogPage() {
 
   const handlePhotoChange = (file: File) => {
     if (file.size > 1048576) {
-      alert("The image size should not exceed 1MB.");
+      setImageError("The image size should not exceed 1MB.");
       return;
     }
     setPhotoFile(file);
@@ -75,7 +75,7 @@ export default function CreateBlogPage() {
       }
 
       if (!values.photoUrl && !photoFile) {
-        setImageError("Please upload an image.");
+        setImageError("Please upload an image in less than 1MB.");
         return;
       }
 
@@ -85,7 +85,10 @@ export default function CreateBlogPage() {
         setLoading(true);
         if (photoFile) {
           const path = await uploadFile(photoFile);
-          if (!path) throw new Error("Error uploading image to Supabase.");
+          if (!path) {
+            setImageError("Error uploading image to Supabase. Please upload an image in less than 1MB.");
+            return
+          }
           values.photoUrl = path;
           setPhotoFile(null);
         }
@@ -120,6 +123,12 @@ export default function CreateBlogPage() {
 
   if (isPending || !token || loading) {
     return <CircularLoading />;
+  }
+
+  if (imageError) {
+    return (
+      <h1>{imageError}</h1>
+    )
   }
 
   return (

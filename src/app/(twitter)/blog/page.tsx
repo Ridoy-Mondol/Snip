@@ -62,6 +62,7 @@ export default function BlogPage() {
 
 
 const { data, isLoading, error } = useQuery(["blogs"], getAllBlogs, {
+  staleTime: 0,
   refetchOnWindowFocus: true,
   refetchOnMount: true,
   cacheTime: 0,

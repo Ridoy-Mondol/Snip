@@ -28,6 +28,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
         }
 
+        if (!title || !category || !content || !authorId) {
+            return NextResponse.json({ success: false, message: "All fields are required!" });
+        }
+
+        if (!photoUrl) {
+            return NextResponse.json({ success: false, message: "Please upload an image in less than 1MB." });
+        }
+
         console.log("Creating a blog in the database...");
         const blog = await prisma.blog.create({
             data: {

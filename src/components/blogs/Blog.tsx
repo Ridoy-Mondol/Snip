@@ -9,6 +9,7 @@ import { Card, CardMedia, Typography, Container } from "@mui/material";
 import { MdArrowForward } from "react-icons/md";
 import { AuthContext } from "@/app/(twitter)/layout";
 import CircularLoading from "@/components/misc/CircularLoading";
+import { getAllBlogs } from "@/utilities/fetch";
 
 interface BlogProps {
   id: string;
@@ -27,6 +28,7 @@ interface BlogProps {
 
 export default function BlogPage({username}: {username: string}) {
   const [blogs, setBlogs] = useState<BlogProps[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [hoveredProfile, setHoveredProfile] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,18 +37,23 @@ export default function BlogPage({username}: {username: string}) {
 
   useEffect(() => {
     async function fetchBlogs() {
-      setLoading(true);
-      const response = await fetch("/api/blogs");
-      const data = await response.json();
-      if (data.success) {
-        setBlogs(data.blogs);
+      try {
+        const response = await getAllBlogs();
+        if (response.success) {
+          setBlogs(response.blogs);
+        } else {
+          setError(response.message || "Failed to fetch blogs.");
+        }
+      } catch (error) {
+        setError("Error fetching blogs.");
+      } finally {
         setLoading(false);
       }
-      setLoading(false);
     }
-
+  
     fetchBlogs();
   }, []);
+  
 
   const handlePopoverOpen = (
     e: React.MouseEvent<HTMLElement>,
@@ -96,7 +103,7 @@ export default function BlogPage({username}: {username: string}) {
                 <CardMedia
                   component="img"
                   height="140"
-                  image={blog.imageUrl ?getFullURL(blog.imageUrl) : ""}
+                  image={blog.imageUrl ? getFullURL(blog.imageUrl) : "/assets/default-blog.jpg"}
                   alt="Blog Image"
                   sx={{ borderRadius: 2 }}
                 />
@@ -137,7 +144,7 @@ export default function BlogPage({username}: {username: string}) {
                   onMouseLeave={handlePopoverClose}
                 >
                   <img
-                    src={blog.author.photoUrl ? getFullURL(blog.author.photoUrl) : ""}
+                    src={blog.author.photoUrl ? getFullURL(blog.author.photoUrl) : "/assets/egg.jpg"}
                     alt={blog.author.username}
                     width={30}
                     height={30}

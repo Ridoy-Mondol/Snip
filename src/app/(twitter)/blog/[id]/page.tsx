@@ -172,7 +172,7 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
         <CardMedia
           component="img"
           height="300"
-          image={blog.imageUrl ? getFullURL(blog.imageUrl) : ""}
+          image={blog.imageUrl ? getFullURL(blog.imageUrl) : "/assets/default-blog.jpg"}
           alt="Blog Image"
           sx={{
             width: "100%",
@@ -249,7 +249,7 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
             >
               <Avatar
                 alt={blog.author.username}
-                src={blog.author.photoUrl ? getFullURL(blog.author.photoUrl) : ""}
+                src={blog.author.photoUrl ? getFullURL(blog.author.photoUrl) : "/assets/egg.jpg"}
                 sx={{ width: 40, height: 40 }}
               />
               <Typography variant="h6">{blog.author.name}</Typography>
@@ -303,7 +303,7 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
                   <CardMedia
                     component="img"
                     height="100%"
-                    image={getFullURL(relatedBlog.imageUrl)}
+                    image={relatedBlog.imageUrl ? getFullURL(relatedBlog.imageUrl) : "/assets/default-blog.jpg"}
                     alt="Blog Image"
                     sx={{
                       objectFit: "cover",
@@ -362,7 +362,7 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
                     >
                       <Avatar
                         alt={relatedBlog.author.username}
-                        src={getFullURL(relatedBlog.author.photoUrl || "/assets/default-avatar.jpg")}
+                        src={getFullURL(relatedBlog.author.photoUrl || "/assets/egg.jpg")}
                         sx={{ width: 30, height: 30 }}
                       />
                       <Typography variant="body2">{relatedBlog.author.name}</Typography>

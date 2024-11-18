@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useContext } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Popover } from "@mui/material";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -34,41 +33,6 @@ export default function BlogPage() {
   const [loading, setLoading] = useState(false);
 
   const { token } = useContext(AuthContext);
-
-  const HOST_URL = process.env.NEXT_PUBLIC_HOST_URL;
-
-//   useEffect(() => {
-//   async function fetchBlogs() {
-//     try {
-//       setLoading(true);
-//       const response = await fetch(`${HOST_URL}/api/blogs`, {
-//         method: "GET",
-//         });
-//       const data = await response.json();
-//       if (data.success) {
-//         setBlogs(data.blogs);
-//         setLoading(false);
-//       } else {
-//         console.error("Failed to fetch related blogs:", data.message);
-//         setLoading(false);
-//       }
-//     } catch (error) {
-//       console.error("Error fetching related blogs:", error);
-//       setLoading(false);
-//     }
-//   }
-
-//   fetchBlogs();
-// }, []); 
-
-
-// const { data, isLoading, error } = useQuery(["blogs"], getAllBlogs, {
-//   staleTime: 0,
-//   refetchOnWindowFocus: true,
-//   refetchOnMount: true,
-//   cacheTime: 0,
-// });
-
 
 useEffect(() => {
   async function fetchBlogs() {
@@ -115,7 +79,6 @@ useEffect(() => {
     return <p>Error loading blogs. Please try again later.</p>;
   }
 
-  // const blogs: BlogProps[] = data.blogs;
 
   return (
     <div className="blog-page" style={{ width: "100%" }}>
@@ -143,7 +106,7 @@ useEffect(() => {
                 <CardMedia
                   component="img"
                   height="140"
-                  image={blog.imageUrl ? getFullURL(blog.imageUrl) : ""}
+                  image={blog.imageUrl ? getFullURL(blog.imageUrl) : "/assets/default-blog.jpg"}
                   alt="Blog Image"
                   sx={{ borderRadius: 2 }}
                 />
@@ -184,7 +147,7 @@ useEffect(() => {
                   onMouseLeave={handlePopoverClose}
                 >
                   <img
-                    src={blog.author.photoUrl ? getFullURL(blog.author.photoUrl) : ""}
+                    src={blog.author.photoUrl ? getFullURL(blog.author.photoUrl) : "/assets/egg.jpg"}
                     alt={blog.author.username}
                     width={30}
                     height={30}

@@ -139,6 +139,18 @@ export const updateBlog = async (blog: {
     return json;
 };
 
+export const getAllBlogs = async () => {
+    const response = await fetch(`${HOST_URL}/api/blogs`, {
+        next: {
+            revalidate: 0,
+        },
+    });
+    const json = await response.json();
+    if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
+    return json;
+};
+
+
 
 
 export const logIn = async (candidate: string) => {

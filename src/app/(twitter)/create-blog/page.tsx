@@ -74,6 +74,11 @@ export default function CreateBlogPage() {
         return;
       }
 
+      if (imageError) {
+        console.error("Image error exists:", imageError);
+        return;
+      }
+
       if (!values.photoUrl && !photoFile) {
         setImageError("Please upload an image in less than 1MB.");
         return;
@@ -87,16 +92,18 @@ export default function CreateBlogPage() {
           const path = await uploadFile(photoFile);
           if (!path) {
             setImageError("Error uploading image to Supabase. Please upload an image in less than 1MB.");
+            setLoading(false);
             return
           }
           values.photoUrl = path;
           setPhotoFile(null);
         }
-
+        if (!imageError) {
         await mutation.mutateAsync(blogData);
         resetForm();
         setCount(0);
         setShowDropzone(false);
+        }
       } catch (error) {
         console.error("Failed to upload image or create blog:", error);
         setLoading(false);

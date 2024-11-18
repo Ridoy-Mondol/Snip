@@ -27,10 +27,11 @@ interface BlogProps {
 }
 
 export default function BlogPage() {
-  // const [blogs, setBlogs] = useState<BlogProps[]>([]);
+  const [blogs, setBlogs] = useState<BlogProps[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [hoveredProfile, setHoveredProfile] = useState("");
-  // const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { token } = useContext(AuthContext);
 
@@ -61,12 +62,32 @@ export default function BlogPage() {
 // }, []); 
 
 
-const { data, isLoading, error } = useQuery(["blogs"], getAllBlogs, {
-  staleTime: 0,
-  refetchOnWindowFocus: true,
-  refetchOnMount: true,
-  cacheTime: 0,
-});
+// const { data, isLoading, error } = useQuery(["blogs"], getAllBlogs, {
+//   staleTime: 0,
+//   refetchOnWindowFocus: true,
+//   refetchOnMount: true,
+//   cacheTime: 0,
+// });
+
+
+useEffect(() => {
+  async function fetchBlogs() {
+    try {
+      const response = await getAllBlogs();
+      if (response.success) {
+        setBlogs(response.blogs);
+      } else {
+        setError(response.message || "Failed to fetch blogs.");
+      }
+    } catch (error) {
+      setError("Error fetching blogs.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchBlogs();
+}, []);
 
 
   const handlePopoverOpen = (
@@ -86,7 +107,7 @@ const { data, isLoading, error } = useQuery(["blogs"], getAllBlogs, {
     return doc.body.textContent || "";
   };
 
-  if (isLoading) {
+  if (loading) {
     return <CircularLoading />;
   }
 
@@ -94,7 +115,7 @@ const { data, isLoading, error } = useQuery(["blogs"], getAllBlogs, {
     return <p>Error loading blogs. Please try again later.</p>;
   }
 
-  const blogs: BlogProps[] = data.blogs;
+  // const blogs: BlogProps[] = data.blogs;
 
   return (
     <div className="blog-page" style={{ width: "100%" }}>

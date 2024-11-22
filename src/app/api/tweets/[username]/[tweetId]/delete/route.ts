@@ -58,23 +58,35 @@ export async function POST(request: NextRequest, { params: { tweetId } }: { para
         return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
 
     try {
-        // Delete associated PollOptions and Votes before deleting the Tweet
-        await prisma.pollOption.deleteMany({
+        // Fetch associated PollOptions and their respective Vote IDs
+        const pollOptions = await prisma.pollOption.findMany({
             where: {
                 tweetId: tweetId,
             },
-        });
-
-        await prisma.vote.deleteMany({
-            where: {
-                pollOptionId: {
-                    in: await prisma.pollOption.findMany({
-                        where: { tweetId },
-                        select: { id: true },
-                    }).then(options => options.map(option => option.id)),
-                },
+            select: {
+                id: true,
             },
         });
+
+        // Delete Votes associated with these PollOptions
+        if (pollOptions.length > 0) {
+            await prisma.vote.deleteMany({
+                where: {
+                    pollOptionId: {
+                        in: pollOptions.map(option => option.id),
+                    },
+                },
+            });
+        }
+
+        // Delete the PollOptions
+        if (pollOptions.length > 0) {
+            await prisma.pollOption.deleteMany({
+                where: {
+                    tweetId: tweetId,
+                },
+            });
+        }
 
         // Finally, delete the tweet
         await prisma.tweet.delete({

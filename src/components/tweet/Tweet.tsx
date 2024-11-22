@@ -239,6 +239,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [hoveredProfile, setHoveredProfile] = useState("");
     const [userVoted, setUserVoted] = useState(false);
+    
     const [updatedPollOptions, setUpdatedPollOptions] = useState(tweet.pollOptions);
     const [totalVotes, setTotalVotes] = useState(tweet.totalVotes);
     const [loading, setLoading] = useState(false);
@@ -256,6 +257,29 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         setPreviewImage(null);
     };
     
+
+    const fetchUserVotedStatus = async () => {
+        if (!token || !tweet.id) return;
+
+        try {
+            const res = await fetch(`/api/tweets/getUserVoted`, {
+                method: "GET",
+                headers: {
+                    userId: token.id,
+                    pollId: tweet.id,
+                },
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                setUserVoted(data.hasVoted);
+            } else {
+                console.error("Error checking vote status:", data.error);
+            }
+        } catch (err) {
+            console.error("Error fetching vote status:", err);
+        }
+    };
 
 
     const fetchVoteCounts = async () => {
@@ -277,12 +301,12 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         }
     };
 
-    const handleVote = async (optionId: string) => {
+    const handleVote = async (optionId: string, e: React.MouseEvent<HTMLElement>) => {
+        e.stopPropagation();
         if (!token) {
             console.error("User must be logged in to vote.");
             return;
         }
-
         try {
             setLoading(true);
             const res = await fetch("/api/tweets/voteOnPoll", {
@@ -325,43 +349,46 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
 
     const isPollTweet = !tweet.text && tweet.pollOptions?.length > 0;
 
-    // Real-time update setup
+    // useEffect(() => {
+    //     fetchVoteCounts();
+
+    //     const channel = supabase
+    //         .channel("realtime:PollOptions")
+    //         .on(
+    //             "postgres_changes",
+    //             { event: "UPDATE", schema: "public", table: "PollOption" },
+    //             (payload) => {
+    //                 const updatedOption = payload.new;
+    //                 // Update the relevant poll option
+    //                 if (updatedOption) {
+    //                     setUpdatedPollOptions((prevOptions) => 
+    //                         prevOptions.map((option) =>
+    //                             option.id === updatedOption.id
+    //                                 ? { ...option, votes: updatedOption.votes }
+    //                                 : option
+    //                         )
+    //                     );
+    //                     setTotalVotes((prevVotes) => prevVotes + 1);
+    //                 }
+    //             }
+    //         )
+    //         .subscribe((status) => {
+    //             if (status === "SUBSCRIBED") {
+    //                 console.log("Subscribed to real-time poll updates.");
+    //             } else {
+    //                 console.error("Error subscribing to real-time updates:", status);
+    //             }
+    //         });
+
+    //     // Cleanup subscription when component unmounts
+    //     return () => {
+    //         supabase.removeChannel(channel);
+    //     };
+    // }, []);
+
     useEffect(() => {
-        // Fetch initial vote counts for the poll options
         fetchVoteCounts();
-
-        const channel = supabase
-            .channel("realtime:PollOptions")
-            .on(
-                "postgres_changes",
-                { event: "UPDATE", schema: "public", table: "PollOption" },
-                (payload) => {
-                    const updatedOption = payload.new;
-                    // Update the relevant poll option
-                    if (updatedOption) {
-                        setUpdatedPollOptions((prevOptions) => 
-                            prevOptions.map((option) =>
-                                option.id === updatedOption.id
-                                    ? { ...option, votes: updatedOption.votes }
-                                    : option
-                            )
-                        );
-                        setTotalVotes((prevVotes) => prevVotes + 1);
-                    }
-                }
-            )
-            .subscribe((status) => {
-                if (status === "SUBSCRIBED") {
-                    console.log("Subscribed to real-time poll updates.");
-                } else {
-                    console.error("Error subscribing to real-time updates:", status);
-                }
-            });
-
-        // Cleanup subscription when component unmounts
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        fetchUserVotedStatus();
     }, []);
 
     if (loading) {
@@ -417,21 +444,25 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                     </Tooltip>
                 </section>
 
-{isPollTweet ? (
+  {isPollTweet ? (
     <div className="poll" style={{ padding: "1rem", borderRadius: "10px", border: "1px solid #e1e8ed" }}>
         <h4 className="poll-title" style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "1rem" }}>
             Poll
         </h4>
         <div className="poll-options" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {updatedPollOptions.map((option) => {
-                const percentage = calculateVotePercentage(option.votes);
+                const percentage = userVoted
+                ? calculateVotePercentage(option.votes) 
+                : '0';
                 return (
                     <div key={option.id} className="poll-option" style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
                         <div className="option-text" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: "14px", color: "#0f1419" }}>{option.text}</span>
-                            <span className="poll-percentage" style={{ fontSize: "14px", fontWeight: "bold", color: "#657786" }}>
+
+                            <span style={{ fontSize: "14px" }}>{option.text}</span>
+                            {userVoted && <span className="poll-percentage" style={{ fontSize: "14px", fontWeight: "bold", color: "#657786" }}>
                                 {percentage}%
                             </span>
+                          }
                         </div>
                         <LinearProgress
                             variant="determinate"
@@ -458,7 +489,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                         key={option.id}
                         variant="contained"
                         color="primary"
-                        onClick={() => handleVote(option.id)}
+                        onClick={(e) => handleVote(option.id, e)}
                         style={{
                             textTransform: "none",
                             borderRadius: "20px",

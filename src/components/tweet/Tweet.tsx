@@ -319,6 +319,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
     };
 
     const calculateVotePercentage = (votes: number) => {
+        if (totalVotes === 0) return '0';
         return ((votes / totalVotes) * 100).toFixed(0);
     };
 

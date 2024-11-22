@@ -186,9 +186,12 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                                     <MenuItem onClick={handleConfirmationClick} className="delete">
                                         Delete
                                     </MenuItem>
+                                    {
+                                    !tweet.isPoll &&
                                     <MenuItem className="delete" onClick={()=> setIsUpdateOpen(true)}>
                                         Update
                                     </MenuItem>
+                                    }
                                 </Menu>
                             </>
                         )}
@@ -337,14 +340,8 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
            </dialog>
          </div>
         )}
-
-
-
-
         </div>
     );
 }
-
-
 
 

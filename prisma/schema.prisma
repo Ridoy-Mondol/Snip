@@ -4,8 +4,8 @@ generator client {
 
 datasource db {
     provider          = "postgresql"
-    url               = env("DATABASE_URL")
-    directUrl         = env("DIRECT_DATABASE_URL")
+    url               = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    directUrl         = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
 }
 
 model User {
@@ -30,6 +30,7 @@ model User {
     receivedMessages Message[]      @relation("userMessagesRecieved")
     notifications    Notification[]
     blogs            Blog[]         @relation("userBlogs")
+    votes     Vote[]    @relation("userVotes")
 }
 
 model Blog {
@@ -46,7 +47,7 @@ model Blog {
 
 model Tweet {
     id          String   @id @default(uuid())
-    text        String   @db.VarChar(280)
+    text        String?   @db.VarChar(280)
     createdAt   DateTime @default(now())
     author      User     @relation("userTweets", fields: [authorId], references: [id])
     authorId    String
@@ -61,6 +62,33 @@ model Tweet {
     isReply     Boolean  @default(false)
     repliedTo   Tweet?   @relation("tweetReplies", fields: [repliedToId], references: [id], onDelete: Cascade)
     repliedToId String?
+
+    // Poll-specific fields
+    isPoll          Boolean  @default(false) 
+    pollOptions     PollOption[] // Relation to poll options
+    pollExpiresAt   DateTime?
+    totalVotes      Int       @default(0)
+}
+
+model PollOption {
+    id         String   @id @default(uuid())
+    text       String   @db.VarChar(100) 
+    votes      Int      @default(0)
+    tweet      Tweet    @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+    tweetId    String
+
+    // Relation to votes
+    votesForOption Vote[]   @relation("pollOptionVotes")
+}
+
+model Vote {
+  id          String    @id @default(uuid())
+  userId      String
+  pollOptionId String
+  user         User         @relation("userVotes", fields: [userId], references: [id])
+  pollOption   PollOption   @relation("pollOptionVotes", fields: [pollOptionId], references: [id])
+
+  @@unique([userId, pollOptionId])  // Ensures a user can vote only once for each option
 }
 
 model Message {

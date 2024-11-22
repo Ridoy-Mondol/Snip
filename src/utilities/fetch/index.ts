@@ -79,18 +79,60 @@ export const getUserTweet = async (tweetId: string, tweetAuthor: string) => {
     return json;
 };
 
-export const createTweet = async (tweet: string) => {
-    const response = await fetch(`${HOST_URL}/api/tweets/create`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: tweet,
-    });
-    const json = await response.json();
-    if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
-    return json;
+// export const createTweet = async (tweet: string) => {
+//     const response = await fetch(`${HOST_URL}/api/tweets/create`, {
+//         method: "POST",
+//         headers: {
+//             "Content-Type": "application/json",
+//         },
+//         body: tweet,
+//     });
+//     const json = await response.json();
+//     if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
+//     return json;
+// };
+
+export const createTweet = async (tweetData: {
+    text: string;
+    authorId: string;
+    photoUrl: string;
+    poll: null | {
+        question: string;
+        options: string[];
+        length: {
+            days: number;
+            hours: number;
+            minutes: number;
+        };
+    };
+}) => {
+    try {
+        console.log("Sending tweet data:", tweetData);
+
+        const response = await fetch(`${HOST_URL}/api/tweets/create`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(tweetData),
+        });
+
+        const json = await response.json();
+
+        if (!json.success) {
+            throw new Error(json.message || "Something went wrong.");
+        }
+
+        console.log("Tweet created successfully:", json);
+        return json;
+    } catch (error) {
+        console.error("Error creating tweet:", error);
+        throw error;  // Ensure the error is thrown to be handled by the calling component
+    }
 };
+
+
+
 
 export const createBlog = async (blog: { title: string, category: string, content: string, authorId: string, photoUrl: string }) => {
     const response = await fetch(`${HOST_URL}/api/blogs/create`, {

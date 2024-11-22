@@ -79,18 +79,6 @@ export const getUserTweet = async (tweetId: string, tweetAuthor: string) => {
     return json;
 };
 
-// export const createTweet = async (tweet: string) => {
-//     const response = await fetch(`${HOST_URL}/api/tweets/create`, {
-//         method: "POST",
-//         headers: {
-//             "Content-Type": "application/json",
-//         },
-//         body: tweet,
-//     });
-//     const json = await response.json();
-//     if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
-//     return json;
-// };
 
 export const createTweet = async (tweetData: {
     text: string;

@@ -75,22 +75,7 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
             .max(280, "Tweet text should be of maximum 280 characters length.")
             .nullable(),
             authorId: yup.string().required("Author ID is required"),
-    photoUrl: yup.string().nullable(),
-    // poll: yup.object()
-    //     .shape({
-    //         question: yup.string().required("Poll question is required"),
-    //         options: yup.array()
-    //             .of(yup.string().required("Each option must have text"))
-    //             .min(2, "At least two options are required"),
-    //         length: yup.object().shape({
-    //             days: yup.number().min(0).required(),
-    //             hours: yup.number().min(0).max(23).required(),
-    //             minutes: yup.number().min(0).max(59).required(),
-    //         }),
-    //     })
-    //     .nullable(),
-
-    // Poll Validation
+            photoUrl: yup.string().nullable(),
     showPoll: yup.boolean().default(false),
     poll: yup.object().shape({
       question: yup.string(),
@@ -109,11 +94,6 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
             text: "",
             authorId: token.id,
             photoUrl: "",
-        //     poll: null as null | {
-        //       question: string;
-        //       options: string[];
-        //       length: { days: number; hours: number; minutes: number };
-        //   },
         poll: {
             question: "",
             options: ["", ""],
@@ -127,14 +107,6 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
               if (!showPoll) console.log("Poll not shown.");
               if (!question.trim()) console.log("Poll question is empty.");
               if (!options.every((opt) => opt.trim())) console.log("One or more poll options are empty.");
-
-              
-            //   if (showPoll && question.trim() && options.every((opt) => opt.trim())) {
-            //       setFieldValue("poll", {
-            //           question: question.trim(),
-            //           options: options.filter((opt) => opt.trim()),
-            //           length: pollLength,
-            //       });
 
             const payload = {
                 ...values,
@@ -153,11 +125,6 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                       options: options.filter((opt) => opt.trim()),
                       length: pollLength,
                   });
-            //   } else {
-            //       setFieldValue("poll", null);
-            //       console.log("No Poll Data");
-            //   }
-      
               if (photoFile) {
                   const path = await uploadFile(photoFile);
                   if (!path) throw new Error("Error uploading image to Supabase.");
@@ -210,8 +177,8 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                   color: "red",
                   display: "flex",
                   alignItems: "center",
-                  minWidth: 0, // To make it fit the icon without extra width
-                  padding: 0, // Remove padding to make it more compact
+                  minWidth: 0, 
+                  padding: 0,
               }}
           >
               <AiOutlineCloseCircle size={20} style={{ marginRight: "8px" }} /> {/* Cross Icon */}

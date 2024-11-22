@@ -200,8 +200,8 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                 <div className="tweet-main">
                     <div className="tweet-text">
                         {tweet.isReply && (
-                            <Link href={`/${tweet.repliedTo.author.username}`} className="reply-to">
-                                <span className="mention">@{tweet.repliedTo.author.username}</span>
+                            <Link href={`/${tweet?.repliedTo?.author.username}`} className="reply-to">
+                                <span className="mention">@{tweet?.repliedTo?.author.username}</span>
                             </Link>
                         )}{" "}
                         {tweet.text}

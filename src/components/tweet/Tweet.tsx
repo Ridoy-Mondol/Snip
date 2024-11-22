@@ -482,6 +482,13 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                 );
             })}
         </div>
+
+        <div className="total-votes" style={{ marginTop: "1rem", fontSize: "14px", color: "#657786" }}>
+            {totalVotes === 0
+                ? 'No votes yet'
+                : `${totalVotes} ${totalVotes === 1 ? 'person' : 'people'} voted`}
+        </div>
+
         {token && !userVoted && (
             <div className="vote-options" style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {updatedPollOptions.map((option) => (

@@ -472,7 +472,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                             },
                         }}
                     >
-                        Vote for "{option.text}"
+                        <p>Vote for &quot;{option.text}&quot;</p>
                     </Button>
                 ))}
             </div>

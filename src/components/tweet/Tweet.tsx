@@ -137,7 +137,6 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         return ((votes / totalVotes) * 100).toFixed(0);
     };
 
-    // const isPollTweet = !tweet.text && tweet.pollOptions?.length > 0;
     const isPollTweet = tweet.isPoll;
     const isPollExpired = tweet.pollExpiresAt && new Date(tweet.pollExpiresAt) <= new Date();
 
@@ -311,8 +310,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                 {/* <ProfileCard user={tweet.author} /> */}
                 <ProfileCard username={hoveredProfile} token={token} />
             </Popover>
-
-
+            
         </motion.div>
     );
 }

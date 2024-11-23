@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Check if the user has voted for any option in the given poll
         const userVote = await prisma.vote.findFirst({
             where: {
                 userId: userId,

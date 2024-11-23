@@ -141,24 +141,13 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
     const isPollTweet = tweet.isPoll;
     const isPollExpired = tweet.pollExpiresAt && new Date(tweet.pollExpiresAt) <= new Date();
 
-    // useEffect(() => {
-    //     fetchVoteCounts();
-    //     fetchUserVotedStatus();
-    // }, []);
-
     useEffect(() => {
-        if (!isPollExpired) {
-            fetchVoteCounts();
-            fetchUserVotedStatus();
-        }
-    }, [isPollExpired]);
+        fetchVoteCounts();
+        fetchUserVotedStatus();
+    }, []);
 
     if (loading) {
         return <CircularLoading />
-    }
-
-    if (isPollExpired) {
-        return null;
     }
 
     return (
@@ -210,14 +199,14 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                     </Tooltip>
                 </section>
 
-  {isPollTweet && tweet.pollExpiresAt && new Date(tweet.pollExpiresAt) > new Date() ? (
+  {isPollTweet ?  (
     <div className="poll" style={{ padding: "1rem", borderRadius: "10px", border: "1px solid #e1e8ed" }}>
         <h4 className="poll-title" style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "1rem" }}>
             {tweet.text}
         </h4>
 
         {
-         userVoted &&
+         (userVoted || isPollExpired ) &&
         <div className="poll-options" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {updatedPollOptions.map((option) => {
                 const percentage = userVoted
@@ -256,16 +245,20 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
         <div className="total-votes" style={{ marginTop: "1rem", fontSize: "14px", color: "#657786" }}>
             {totalVotes === 0
-                ? 'No votes yet'
+                ? (isPollExpired ? 'No votes' : 'No votes yet')
                 : `${totalVotes} ${totalVotes === 1 ? 'person' : 'people'} voted`}
         </div>
         <div style={{fontSize: "28px", color: "#657786"}}>.</div>
         <div className="total-votes" style={{ marginTop: "1rem", fontSize: "14px", color: "#657786" }}>
-            {tweet.pollExpiresAt && `Poll expires on ${formatDate(tweet.pollExpiresAt)}`}
+                {tweet.pollExpiresAt && (
+                    isPollExpired
+                        ? "Poll has ended"
+                        : `Poll expires on ${formatDate(tweet.pollExpiresAt)}`
+                )}
         </div>
         </div>
 
-        {token && !userVoted && (
+        {token && !userVoted && !isPollExpired && (
             <div className="vote-options" style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {updatedPollOptions.map((option) => (
                     <Button

@@ -111,9 +111,20 @@ export async function POST(request: NextRequest) {
             };
         }
 
+        // const tweetText = poll?.question || text || "";
+        let tweetText;
+
+        if (poll !== null) {
+             tweetText = poll.question;
+        }
+
+        if (poll === null && text) {
+            tweetText = text;
+        }
+
         // Prepare tweet data
         const tweetData = {
-            text: text || "", // Always use provided text for normal tweets
+            text: tweetText, 
             photoUrl: photoUrl || null,
             isReply: isReply || false,
             repliedTo: repliedToId

@@ -202,8 +202,14 @@ export const logInAsTest = async () => {
     return await logIn(JSON.stringify(testAccount));
 };
 
-export const logout = async () => {
+export const logout = async ({ userAgent, ipAddress }: { userAgent: string; ipAddress: string }) => {
     await fetch(`${HOST_URL}/api/auth/logout`, {
+        method: "GET",  
+        headers: {
+            "Content-Type": "application/json",
+            "User-Agent": userAgent,
+            "X-Forwarded-For": ipAddress,
+        },
         next: {
             revalidate: 0,
         },

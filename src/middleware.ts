@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyJwtToken } from "@/utilities/auth";
+import { verifyJwtToken, verifyTokenExist } from "@/utilities/auth";
 
 export const middleware = async (request: NextRequest) => {
     const { cookies, nextUrl, url } = request;
@@ -18,24 +18,26 @@ export const middleware = async (request: NextRequest) => {
         "/messages/create",
         "/create-blog",
     ];
-    const staticRoutesPrivate = ["/notifications", "/messages", "/home"];
+    const staticRoutesPrivate = ["/notifications", "/messages", "/home", "/explore", "/settings", "/sessions"];
 
     const hasVerifiedToken = token && (await verifyJwtToken(token));
+    const hasVerifiedTokenExist = token && (await verifyTokenExist(token));
+    
 
-    if (!hasVerifiedToken && protectedRoutes.some((route) => nextUrl.pathname.endsWith(route))) {
+    if ((!hasVerifiedToken || !hasVerifiedTokenExist) && protectedRoutes.some((route) => nextUrl.pathname.endsWith(route))) {
         return NextResponse.redirect(new URL("/not-authorized", url));
     }
 
-    if (!hasVerifiedToken && staticRoutesPrivate.some((route) => nextUrl.pathname.startsWith(route))) {
+    if ((!hasVerifiedToken || !hasVerifiedTokenExist) && staticRoutesPrivate.some((route) => nextUrl.pathname.startsWith(route))) {
         return NextResponse.redirect(new URL("/", url));
     }
 
-    if (hasVerifiedToken && nextUrl.pathname === "/") {
+    if (hasVerifiedToken && hasVerifiedTokenExist && nextUrl.pathname === "/") {
         return NextResponse.redirect(new URL("/explore", url));
     }
 
     if (
-        hasVerifiedToken &&
+        hasVerifiedToken && hasVerifiedTokenExist &&
         (nextUrl.pathname === "/notifications/edit" ||
             nextUrl.pathname === "/messages/edit" ||
             nextUrl.pathname === "/explore/edit" ||

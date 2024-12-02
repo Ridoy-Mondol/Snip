@@ -4,8 +4,8 @@ generator client {
 
 datasource db {
     provider          = "postgresql"
-    url               = env("DATABASE_URL")
-    directUrl         = env("DIRECT_URL")
+    url               = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    directUrl         = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
 }
 
 model User {
@@ -31,6 +31,7 @@ model User {
     notifications    Notification[]
     blogs            Blog[]         @relation("userBlogs")
     votes     Vote[]    @relation("userVotes")
+    sessions         Session[]      @relation("userSessions")
 }
 
 model Blog {
@@ -110,4 +111,16 @@ model Notification {
     isRead    Boolean  @default(false)
     user      User     @relation(fields: [userId], references: [id])
     userId    String
+}
+
+model Session {
+    id         String   @id @default(uuid())
+    user       User     @relation("userSessions", fields: [userId], references: [id])
+    userId     String
+    token      String?
+    device     String   @db.VarChar(255)  // e.g., "iPhone", "Windows PC"
+    browser    String   @db.VarChar(255)  // e.g., "Chrome", "Firefox"
+    ipAddress  String   @db.VarChar(50)   // IP Address
+    createdAt  DateTime @default(now())   // Session start time
+    updatedAt  DateTime @default(now()) @updatedAt // Last updated time
 }

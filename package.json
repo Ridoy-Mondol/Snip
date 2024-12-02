@@ -52,10 +52,12 @@
         "react-dropzone": "^14.2.3",
         "react-icons": "^4.8.0",
         "react-infinite-scroll-component": "^6.1.0",
+        "ua-parser-js": "^2.0.0",
         "universal-cookie": "^4.0.4",
         "yup": "^1.1.1"
     },
     "devDependencies": {
+        "@types/useragent": "^2.3.4",
         "encoding": "^0.1.13",
         "eslint-config-prettier": "^8.8.0",
         "prettier": "^2.8.8",

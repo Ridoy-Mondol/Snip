@@ -37,7 +37,21 @@ export default function LogInDialog({ open, handleLogInClose }: LogInDialogProps
         },
         validationSchema: validationSchema,
         onSubmit: async (values, { resetForm }) => {
-            const response = await logIn(JSON.stringify(values));
+            // Get the browser and IP address
+            const userAgent = navigator.userAgent || "Unknown Device";
+            const ipAddress = await fetch("https://api.ipify.org?format=json")
+                .then((res) => res.json())
+                .then((data) => data.ip)
+                .catch(() => "Unknown IP");
+
+            // Prepare the payload with session details
+            const payload = {
+                ...values,
+                browser: userAgent,
+                ip: ipAddress,
+            };
+
+            const response = await logIn(JSON.stringify(payload));
             if (!response.success) {
                 setSnackbar({ message: response.message, severity: "error", open: true });
                 return;

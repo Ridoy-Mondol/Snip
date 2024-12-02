@@ -28,7 +28,12 @@ export default function LeftSidebar() {
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
-        await logout();
+        const userAgent = navigator.userAgent;
+        const ipAddress = await fetch("https://api.ipify.org?format=json")
+        .then((res) => res.json())
+        .then((data) => data.ip)
+        .catch(() => "Unknown IP");
+        await logout({ userAgent, ipAddress });
         router.push("/");
     };
 
@@ -192,6 +197,9 @@ export default function LeftSidebar() {
                                 </MenuItem>
                                 <MenuItem onClick={handleAnchorClose}>
                                     <Link href="/settings">Settings</Link>
+                                </MenuItem>
+                                <MenuItem onClick={handleAnchorClose}>
+                                    <Link href="/sessions">Sessions</Link>
                                 </MenuItem>
                                 <MenuItem onClick={handleLogOutClick}>Log Out</MenuItem>
                             </Menu>

@@ -384,7 +384,7 @@ useEffect(() => {
         </AccordionSummary>
         <AccordionDetails>
           <Typography variant="body1">
-            <strong>Endpoint:</strong> POST /api/public/tweet/delete_tweet
+            <strong>Endpoint:</strong> POST /api/public/tweet/delete_tweet/:tweetId
           </Typography>
           <Typography variant="body1">
             <strong>Headers:</strong>

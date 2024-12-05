@@ -42,15 +42,29 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        const response = NextResponse.json({
-            success: true,
-            data: tweets,
-        });
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        response.headers.set('Access-Control-Allow-Methods', 'GET');
-        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+        // const response = NextResponse.json({
+        //     success: true,
+        //     data: tweets,
+        // });
+        // response.headers.set('Access-Control-Allow-Origin', '*');
+        // response.headers.set('Access-Control-Allow-Methods', 'GET');
+        // response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
 
-        return response;
+        // return response;
+        return new NextResponse(
+            JSON.stringify({
+                success: true,
+                data: tweets,
+            }),
+            {
+                status: 200,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+                },
+            }
+        );        
     } catch (error: any) {
         console.error("Error fetching tweets:", error);
         const response = NextResponse.json({

@@ -194,7 +194,7 @@ useEffect(() => {
             </ul>
           </Typography>
           <Typography variant="body1" sx={{ mt: 2 }}>
-            <strong>Guidelines:</strong> To create a tweet or poll, send a POST request with multipart/form-data as the content type. The request should include either text (string) for the tweet content or poll (stringified JSON object) for poll details. You can only include one of these, not both. If creating a tweet, the text field is required. If creating a poll, the poll field should include a question (string), options (array of strings), and an optional length (object with days, hours, and/or minutes for expiration). Optionally, you can include isReply (boolean) and repliedToId (string) if it's a reply to another tweet. For an image, include the photo field with the image file. Authentication requires an x-api-key header.
+            <strong>Guidelines:</strong> To create a tweet or poll, send a POST request with multipart/form-data as the content type. The request should include either text (string) for the tweet content or poll (stringified JSON object) for poll details. You can only include one of these, not both. If creating a tweet, the text field is required. If creating a poll, the poll field should include a question (string), options (array of strings), and an optional length (object with days, hours, and/or minutes for expiration). Optionally, you can include isReply (boolean) and repliedToId (string) if it`&apos;`s a reply to another tweet. For an image, include the photo field with the image file. Authentication requires an x-api-key header.
           </Typography>
           <Typography variant="body1" sx={{ mt: 2 }}>
             <strong>Sample Request:</strong>

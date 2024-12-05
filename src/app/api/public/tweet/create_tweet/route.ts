@@ -12,7 +12,7 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-export const uploadFile = async (file: File) => {
+const uploadFile = async (file: File) => {
     const { data, error } = await supabase.storage.from("media").upload(`${Date.now()}`, file);
     if (error) {
         console.error("Failed to upload image:", error.message);

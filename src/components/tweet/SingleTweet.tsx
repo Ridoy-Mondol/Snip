@@ -358,7 +358,9 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                             <div className="tweet-image">
                                 <Image
                                     onClick={handleImageClick}
-                                    src={getFullURL(tweet.photoUrl)}
+                                    src={tweet.photoUrl.startsWith("http://") || tweet.photoUrl.startsWith("https://")
+                                        ? tweet.photoUrl 
+                                        : getFullURL(tweet.photoUrl)}
                                     alt="tweet image"
                                     placeholder="blur"
                                     blurDataURL={shimmer(500, 500)}

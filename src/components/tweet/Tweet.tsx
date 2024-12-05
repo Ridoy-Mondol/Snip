@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { AiFillTwitterCircle } from "react-icons/ai";
-import { createClient } from "@supabase/supabase-js";
 
 import { TweetProps } from "@/types/TweetProps";
 import { formatDate, formatDateExtended } from "@/utilities/date";
@@ -37,16 +36,47 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
     const { token } = useContext(AuthContext);
     const router = useRouter();
 
-    const handlePreviewClick = (image: string) => {
-        setPreviewImage(image);
+    const handleTweetClick = () => {
+        router.push(`/${tweet.author.username}/tweets/${tweet.id}`);
+    };
+    const handlePropagation = (e: React.MouseEvent) => {
+        e.stopPropagation();
+    };
+    const handleImageClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        handlePreviewClick();
+    };
+    // const handlePreviewClick = (image: string) => {
+    //     setPreviewImage(image);
+    //     setIsPreviewOpen(true);
+    // };
+    
+    // const handlePreviewClose = () => {
+    //     setIsPreviewOpen(false);
+    //     setPreviewImage(null);
+    // };
+    const handlePreviewClick = () => {
         setIsPreviewOpen(true);
     };
-    
     const handlePreviewClose = () => {
         setIsPreviewOpen(false);
-        setPreviewImage(null);
     };
     
+    const handlePopoverOpen = (e: React.MouseEvent<HTMLElement>, type: "default" | "mention" | "retweet" = "default") => {
+        if (type === "mention") {
+            {tweet.repliedTo && setHoveredProfile(tweet.repliedTo?.author.username)};
+        }
+        if (type === "retweet") {
+            setHoveredProfile(tweet.author.username);
+        }
+        if (type === "default") {
+            setHoveredProfile(tweet.author.username);
+        }
+        setAnchorEl(e.currentTarget);
+    };
+    const handlePopoverClose = () => {
+        setAnchorEl(null);
+    };
 
     const fetchUserVotedStatus = async () => {
         if (!token || !tweet.id) return;
@@ -151,18 +181,20 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
 
     return (
         <motion.div
-            onClick={() => router.push(`/${tweet.author.username}/tweets/${tweet.id}`)}
+            onClick={handleTweetClick}
             className={`tweet ${tweet.isRetweet && "retweet"} ${tweet.isReply && "reply"}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
         >
             <Link
-                onClick={(e) => e.stopPropagation()}
+                onClick={handlePropagation}
                 className="tweet-avatar"
                 href={`/${tweet.author.username}`}
-                onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
-                onMouseLeave={() => setAnchorEl(null)}
+                // onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
+                // onMouseLeave={() => setAnchorEl(null)}
+                onMouseEnter={handlePopoverOpen}
+                onMouseLeave={handlePopoverClose}
             >
                 <Avatar
                     className="avatar"
@@ -177,8 +209,10 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                         onClick={(e) => e.stopPropagation()}
                         className="tweet-author-link"
                         href={`/${tweet.author.username}`}
-                        onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
-                        onMouseLeave={() => setAnchorEl(null)}
+                        // onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
+                        // onMouseLeave={() => setAnchorEl(null)}
+                        onMouseEnter={handlePopoverOpen}
+                        onMouseLeave={handlePopoverClose}
                     >
                         <span className="tweet-author">
                             {tweet.author.name || tweet.author.username}
@@ -286,7 +320,50 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         )}
     </div>
 ) : (
-    <div className="tweet-text">{tweet.text}</div>
+    <>
+
+<div className="tweet-text">
+                    {tweet.isReply && (
+                        <Link
+                            onClick={handlePropagation}
+                            href={`/${tweet.repliedTo?.author.username}`}
+                            className="reply-to"
+                        >
+                            <span
+                                className="mention"
+                                onMouseEnter={(e) => handlePopoverOpen(e, "mention")}
+                                onMouseLeave={handlePopoverClose}
+                            >
+                                @{tweet.repliedTo?.author.username}
+                            </span>
+                        </Link>
+                    )}{" "}
+                    {tweet.text}
+                </div>
+                {tweet.photoUrl && (
+                    <div onClick={handlePropagation}>
+                        <div className="tweet-image">
+                            <Image
+                                onClick={handleImageClick}
+                                src={tweet.photoUrl.startsWith("http://") || tweet.photoUrl.startsWith("https://")
+                                    ? tweet.photoUrl 
+                                    : getFullURL(tweet.photoUrl)} 
+                                alt="tweet image"
+                                placeholder="blur"
+                                blurDataURL={shimmer(500, 500)}
+                                height={500}
+                                width={500}
+                            />
+                        </div>
+                        <PreviewDialog
+                            open={isPreviewOpen}
+                            handlePreviewClose={handlePreviewClose}
+                            url={tweet.photoUrl}
+                        />
+                    </div>
+                )}
+
+    </>
 )}
 
                 <div onClick={(e) => e.stopPropagation()} className="tweet-bottom">

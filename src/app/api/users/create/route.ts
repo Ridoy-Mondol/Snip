@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
+import { v4 as uuidv4 } from "uuid";
 
 import { prisma } from "@/prisma/client";
 import { hashPassword } from "@/utilities/bcrypt";
@@ -32,10 +33,13 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        const apiKey = uuidv4();
+
         const newUser = await prisma.user.create({
             data: {
                 ...userData,
                 password: hashedPassword,
+                apiKey: apiKey,
             },
         });
 

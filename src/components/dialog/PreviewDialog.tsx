@@ -14,7 +14,9 @@ export default function PreviewDialog({ open, handlePreviewClose, url }: Preview
                 </button>
                 <div className="image-wrapper">
                     <Image
-                        src={url === "/assets/header.jpg" || url === "/assets/egg.jpg" ? url : getFullURL(url)}
+                        src={url.startsWith("http://") || url.startsWith("https://") 
+                            ? url 
+                            : (url ? getFullURL(url) : "/assets/default-image.jpg")}                        
                         alt=""
                         fill
                         priority={false}

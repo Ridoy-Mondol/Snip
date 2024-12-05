@@ -201,6 +201,9 @@ export default function LeftSidebar() {
                                 <MenuItem onClick={handleAnchorClose}>
                                     <Link href="/sessions">Sessions</Link>
                                 </MenuItem>
+                                <MenuItem onClick={handleAnchorClose}>
+                                    <Link href="/developer_settings">Developer Settings</Link>
+                                </MenuItem>
                                 <MenuItem onClick={handleLogOutClick}>Log Out</MenuItem>
                             </Menu>
                         </>

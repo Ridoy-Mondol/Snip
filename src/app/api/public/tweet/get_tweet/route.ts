@@ -42,16 +42,26 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: true,
             data: tweets,
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+
+        return response;
     } catch (error: any) {
         console.error("Error fetching tweets:", error);
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: false,
             message: "Failed to fetch tweets.",
             error: error.message,
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+
+        return response;
     }
 }

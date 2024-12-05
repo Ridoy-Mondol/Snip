@@ -65,16 +65,26 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             data: { text: text },
         });
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: true,
             message: "Tweet updated successfully.",
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'PATCH');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+
+        return response;
     } catch (error: any) {
         console.error("Error updating tweet:", error);
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: false,
             message: "Failed to update tweet.",
             error: error.message,
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'PATCH');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+
+        return response;
     }
 }

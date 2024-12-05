@@ -51,17 +51,25 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             });
         }
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: true,
             message: "Tweet fetched successfully.",
             data: tweet,
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+        return response;
     } catch (error: any) {
         console.error("Error fetching tweet:", error);
-        return NextResponse.json({
+        const response= NextResponse.json({
             success: false,
             message: "Failed to fetch tweet.",
             error: error.message,
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+        return response;
     }
 }

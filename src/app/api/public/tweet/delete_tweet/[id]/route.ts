@@ -51,16 +51,26 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
             where: { id: params.id },
         });
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: true,
             message: "Tweet deleted successfully.",
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'DELETE');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+
+        return response;
     } catch (error: any) {
         console.error("Error deleting tweet:", error);
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: false,
             message: "Failed to delete tweet.",
             error: error.message,
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'DELETE');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+
+        return response;
     }
 }

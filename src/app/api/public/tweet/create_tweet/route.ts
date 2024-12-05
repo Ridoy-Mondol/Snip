@@ -112,13 +112,23 @@ export async function POST(request: NextRequest) {
 
         console.log("Tweet created successfully:", createdTweet);
 
-        return NextResponse.json({ success: true, message: "Tweet created successfully." });
+        const response = NextResponse.json({ success: true, message: "Tweet created successfully." });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'POST');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+
+        return response;
     } catch (error: any) {
         console.error("Error creating tweet:", error);
-        return NextResponse.json({
+        const response = NextResponse.json({
             success: false,
             message: "Failed to create tweet.",
             error: error.message,
         });
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'POST');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+
+        return response;
     }
 }

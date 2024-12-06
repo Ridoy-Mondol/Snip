@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
 import { v4 as uuidv4 } from "uuid";
+import { UAParser } from 'ua-parser-js';
 
 import { prisma } from "@/prisma/client";
 import { hashPassword } from "@/utilities/bcrypt";
@@ -33,12 +34,23 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        const userAgent = request.headers.get("user-agent") || "Unknown Device";
+        const ipAddress = getIpAddress(request);
+
+        const parser = new UAParser(userAgent);
+        const device = parser.getDevice();
+        const os = parser.getOS();
+        const browser = parser.getBrowser();
+
+        let deviceInfo = os.name && os.version ? `${os.name} ${os.version}` : os.name || "Unknown OS";
+
         const apiKey = uuidv4();
 
         const newUser = await prisma.user.create({
             data: {
-                ...userData,
+                username: userData.username,
                 password: hashedPassword,
+                name: userData.name,
                 apiKey: apiKey,
             },
         });
@@ -64,6 +76,16 @@ export async function POST(request: NextRequest) {
             .setExpirationTime("1d")
             .sign(getJwtSecretKey());
 
+            await prisma.session.create({
+                data: {
+                    userId: newUser.id,
+                    token: token,
+                    device: deviceInfo,
+                    browser: `${browser.name || "Unknown Browser"} ${browser.version || "Unknown Version"}`,
+                    ipAddress: ipAddress.toString(),
+                },
+            });
+
         const response = NextResponse.json({
             success: true,
         });
@@ -82,3 +104,22 @@ export async function POST(request: NextRequest) {
         });
     }
 }
+
+
+const getIpAddress = (request: NextRequest) => {
+    const isLocalhost = request.headers.get("x-forwarded-for")?.includes("127.0.0.1") || request.headers.get("x-forwarded-for")?.includes("::1");
+
+    // In development environment (localhost), return "::1" for localhost IP
+    if (isLocalhost || process.env.NODE_ENV === "development") {
+        return "::1";
+    }
+
+    // In production, extract first IP from x-forwarded-for
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    if (forwardedFor) {
+        return forwardedFor.split(",")[0].trim(); // Get the first IP
+    }
+    
+    // Fallback to the request IP if no x-forwarded-for header
+    return request.ip || "Unknown IP";
+};

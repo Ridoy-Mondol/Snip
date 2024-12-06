@@ -48,11 +48,20 @@ export default function SignUpDialog({ open, handleSignUpClose }: SignUpDialogPr
         },
         validationSchema: validationSchema,
         onSubmit: async (values, { resetForm }) => {
-            const response = await createUser(JSON.stringify(values));
+            const userAgent = navigator.userAgent || "Unknown Device";
+            const ipAddress = await fetch("https://api.ipify.org?format=json")
+                .then((res) => res.json())
+                .then((data) => data.ip)
+                .catch(() => "Unknown IP");
+                const payload = {
+                    ...values,
+                    browser: userAgent,
+                    ip: ipAddress,
+                };
+            const response = await createUser(JSON.stringify(payload));
             if (!response.success) {
                 return setSnackbar({
-                    // message: "Something went wrong. Please try again.",
-                    message: response.message,
+                    message: "Something went wrong.",
                     severity: "error",
                     open: true,
                 });

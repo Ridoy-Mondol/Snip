@@ -115,7 +115,7 @@ export const createTweet = async (tweetData: {
         return json;
     } catch (error) {
         console.error("Error creating tweet:", error);
-        throw error;  // Ensure the error is thrown to be handled by the calling component
+        throw error; 
     }
 };
 
@@ -194,10 +194,12 @@ export const logIn = async (candidate: string) => {
     return response.json();
 };
 
-export const logInAsTest = async () => {
+export const logInAsTest = async (userAgent: string, ipAddress: string) => {
     const testAccount = {
         username: "test",
         password: "123456789",
+        browser: userAgent,
+        ip: ipAddress,
     };
     return await logIn(JSON.stringify(testAccount));
 };

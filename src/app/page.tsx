@@ -34,21 +34,16 @@ export default function RootPage() {
     const handleLogInClose = () => {
         setIsLogInOpen(false);
     };
-    // const handleTestLogin = async () => {
-    //     setIsLoggingAsTest(true);
-    //     const response = await logInAsTest();
-    //     if (!response.success) {
-    //         setIsLoggingAsTest(false);
-    //         setSnackbar({ message: "Something went wrong! Please try again.", severity: "error", open: true });
-    //         return;
-    //     }
-    //     router.push("/explore");
-    // };
 
     const handleTestLogin = async () => {
+        const userAgent = navigator.userAgent || "Unknown Device";
+        const ipAddress = await fetch("https://api.ipify.org?format=json")
+                .then((res) => res.json())
+                .then((data) => data.ip)
+                .catch(() => "Unknown IP");
         try {
             setIsLoggingAsTest(true);
-            const response = await logInAsTest();
+            const response = await logInAsTest(userAgent, ipAddress);
             if (!response?.success) {
                 setIsLoggingAsTest(false);
                 setSnackbar({ message: "Something went wrong! Please try again.", severity: "error", open: true });

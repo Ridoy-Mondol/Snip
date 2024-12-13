@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
     const cookieStore = cookies();
     const token = cookieStore.get("token")?.value;
     const verifiedToken: UserProps = token && (await verifyJwtToken(token));
-    console.log('function called');
 
     if (!verifiedToken)
         return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
@@ -18,6 +17,9 @@ export async function GET(request: NextRequest) {
         await prisma.notification.updateMany({
             where: {
                 userId: verifiedToken.id,
+                type: {
+                    not: "message",
+                }
             },
             data: {
                 isRead: true,

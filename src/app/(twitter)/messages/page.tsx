@@ -13,8 +13,9 @@ import Conversation from "@/components/message/Conversation";
 import { ConversationResponse, MessageProps } from "@/types/MessageProps";
 import Messages from "@/components/message/Messages";
 import { NotificationProps } from "@/types/NotificationProps";
-import { getNotifications, markNotificationsRead } from "@/utilities/fetch";
-import { m } from "framer-motion";
+import { getNotifications, markMessageNotificationsRead } from "@/utilities/fetch";
+
+type NotificationWithUserId = NotificationProps & { userId: string };
 
 export default function MessagesPage() {
     const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
@@ -101,33 +102,44 @@ export default function MessagesPage() {
 
         // Mutation to mark notifications as read
         const markNotificationsReadMutation = useMutation({
-            mutationFn: markNotificationsRead,
+            mutationFn: (notificationId: string) => markMessageNotificationsRead(notificationId),
             onSuccess: () => {
                 queryClient.invalidateQueries(["notifications"]);
             },
             onError: (error) => console.error("Error marking notifications as read:", error),
         });
     
-        const handleNotificationsRead = () => {
-            markNotificationsReadMutation.mutate();
+        const handleNotificationsRead = (notificationId: string) => {
+            markNotificationsReadMutation.mutate(notificationId);
         };
 
-        console.log('userId', isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipient.username, isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipient.username === token?.username);
+        // console.log('userId', isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipient.username, isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipient.username === token?.username);
 
-        const recipientName = isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipient.username;
+
+
+        // const recipientId = isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipientId;
+
+        const recipientId = isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipientId;
+
+        const senderName = isConversationSelected.messages[isConversationSelected.messages.length - 1]?.sender.username;
+
+        console.log('recipientId', recipientId, 'senderName', senderName);
+
+        const specificNotificationToMarkAsRead = messageNotifications.find((notification: NotificationWithUserId) => notification.userId === recipientId && (JSON.parse(notification.content)).sender.username === senderName && !notification.isRead);
+
+        console.log('specificNotificationToMarkAsRead', specificNotificationToMarkAsRead);
+
+
         
         useEffect(() => {
-        if (isConversationSelected.selected && recipientName && token &&  recipientName === token?.username) {
-            if (
-                isNotificationsFetched &&
-                messageNotifications.some((notification: any) => !notification.isRead)
-            ) {
+        if (isConversationSelected.selected &&isNotificationsFetched && specificNotificationToMarkAsRead) {
                 const timeoutId = setTimeout(() => {
-                    handleNotificationsRead();
+                    handleNotificationsRead(specificNotificationToMarkAsRead.id);
                 }, 1000);
                 return () => clearTimeout(timeoutId);
-            }
-        }}, [isNotificationsFetched, messageNotifications, isConversationSelected.selected, recipientName, token?.username]);
+        }}, [isNotificationsFetched,isConversationSelected.selected, specificNotificationToMarkAsRead]);
+
+    
 
 
 

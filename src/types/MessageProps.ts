@@ -7,6 +7,7 @@ export type MessageProps = {
     text: string;
     createdAt: Date;
     photoUrl: string;
+    recipientId: string ;
 };
 
 export type ConversationResponse = {

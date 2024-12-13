@@ -448,7 +448,6 @@ export const createNotification = async (
 };
 
 export const markNotificationsRead = async () => {
-    console.log("markNotificationsRead");
     const response = await fetch(`${HOST_URL}/api/notifications/read`, {
         next: {
             revalidate: 0,
@@ -458,3 +457,17 @@ export const markNotificationsRead = async () => {
     if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
     return json;
 };
+
+
+export const markMessageNotificationsRead = async (notificationId: string) => {
+    const response = await fetch(`${HOST_URL}/api/notifications/message/read/${notificationId}`, {
+        next: {
+            revalidate: 0,
+        },
+    });
+    const json = await response.json();
+    if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
+    return json;
+};
+
+

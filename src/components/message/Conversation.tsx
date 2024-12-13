@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Avatar, Menu, MenuItem, Popover, Tooltip } from "@mui/material";
 import { AiFillTwitterCircle } from "react-icons/ai";
 import { RxDotsHorizontal } from "react-icons/rx";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import { formatDate, formatDateExtended } from "@/utilities/date";
@@ -11,6 +11,11 @@ import ProfileCard from "../user/ProfileCard";
 import { ConversationProps } from "@/types/MessageProps";
 import CircularLoading from "../misc/CircularLoading";
 import { deleteConversation } from "@/utilities/fetch";
+import { NotificationProps } from "@/types/NotificationProps";
+import { getNotifications } from "@/utilities/fetch";
+
+
+type NotificationWithUserId = NotificationProps & { userId: string };
 
 export default function Conversation({ conversation, token, handleConversations }: ConversationProps) {
     const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
@@ -38,6 +43,21 @@ export default function Conversation({ conversation, token, handleConversations 
             : conversation.messages[conversation.messages.length - 1].sender;
 
     const lastMessage = conversation.messages[conversation.messages.length - 1];
+
+    const {
+        isLoading: isNotificationsLoading,
+        data: notificationsData,
+        isFetched: isNotificationsFetched,
+    } = useQuery({
+        queryKey: ["notifications"],
+        queryFn: getNotifications,
+        enabled: !!token,
+        onError: (error) => console.error("Error fetching notifications:", error),
+    });
+
+    const isNotificationExist = notificationsData?.notifications?.find(
+        (notification: NotificationWithUserId) => (notification.type === "message" && notification.isRead === false && (JSON.parse(notification.content)).sender.username === messagedUsername && notification.userId === token.id)
+    ) || null;
 
     const handlePopoverOpen = (e: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(e.currentTarget);
@@ -101,7 +121,12 @@ export default function Conversation({ conversation, token, handleConversations 
                         </span>
                     </Tooltip>
                 </section>
-                <div className="last-message text-muted">{lastMessage.text}</div>
+                <div 
+                data-conversation-id={lastMessage.text}
+                className="last-message text-muted" style={isNotificationExist ? { fontWeight: "700", color: 'red' } : {}}
+                >
+                  {lastMessage.text}
+                </div>
             </div>
             <>
                 <button className="three-dots icon-hoverable" onClick={handleThreeDotsClick}>

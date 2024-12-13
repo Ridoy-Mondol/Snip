@@ -19,7 +19,6 @@ type NotificationWithUserId = NotificationProps & { userId: string };
 
 export default function MessagesPage() {
     const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
-    const [notifications, setNotifications] = useState<NotificationProps[]>([]);
     const [isConversationSelected, setIsConversationSelected] = useState({
         selected: false,
         messages: [] as MessageProps[],
@@ -42,46 +41,6 @@ export default function MessagesPage() {
     const handleConversations = (isSelected: boolean, messages: MessageProps[] = [], messagedUsername: string = "") => {
         setIsConversationSelected({ selected: isSelected, messages, messagedUsername });
     };
-
-
-
-    // const { isLoading: isLoading2, data: data2, isFetched: isFetched2 } =useQuery({
-    //     queryKey: ["notifications"],
-    //     queryFn: getNotifications,
-    //     onSuccess: (data) => {
-    //         const filteredNotifications = data.notifications.filter ((notification: NotificationProps) => notification.type === "message"); 
-    //         setNotifications(filteredNotifications);
-    //     },
-    // });
-
-    // const mutation = useMutation({
-    //     mutationFn: markNotificationsRead,
-    //     onSuccess: () => {
-    //         queryClient.invalidateQueries(["notifications"]);
-    //     },
-    //     onError: (error) => console.log(error),
-    // });
-
-    // const handleNotificationsRead = () => {
-    //     mutation.mutate();
-    // };
-
-    // console.log("Notifications:", notifications);
-
-    // useEffect(() => {
-    //     if (notifications?.filter((notification: NotificationProps) => !notification.isRead).length > 0) {
-    //         const countdownForMarkAsRead = setTimeout(() => {
-    //             handleNotificationsRead();
-    //         }, 1000);
-
-    //         return () => {
-    //             clearTimeout(countdownForMarkAsRead);
-    //         };
-    //     }
-    // }, [notifications]);
-
-    
-        // Fetch notifications and filter for "message" type
         const {
             isLoading: isNotificationsLoading,
             data: notificationsData,
@@ -98,8 +57,6 @@ export default function MessagesPage() {
             (notification: NotificationProps) => notification.type === "message"
         ) || [];
 
-        // console.log('messageNotificationss', messageNotifications.filter((notifications: NotificationProps) => (notifications?.userId === token?.id && notifications.isRead === false)));
-
         // Mutation to mark notifications as read
         const markNotificationsReadMutation = useMutation({
             mutationFn: (notificationId: string) => markMessageNotificationsRead(notificationId),
@@ -112,24 +69,12 @@ export default function MessagesPage() {
         const handleNotificationsRead = (notificationId: string) => {
             markNotificationsReadMutation.mutate(notificationId);
         };
-
-        // console.log('userId', isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipient.username, isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipient.username === token?.username);
-
-
-
-        // const recipientId = isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipientId;
-
+        
         const recipientId = isConversationSelected.messages[isConversationSelected.messages.length - 1]?.recipientId;
 
         const senderName = isConversationSelected.messages[isConversationSelected.messages.length - 1]?.sender.username;
 
-        console.log('recipientId', recipientId, 'senderName', senderName);
-
         const specificNotificationToMarkAsRead = messageNotifications.find((notification: NotificationWithUserId) => notification.userId === recipientId && (JSON.parse(notification.content)).sender.username === senderName && !notification.isRead);
-
-        console.log('specificNotificationToMarkAsRead', specificNotificationToMarkAsRead);
-
-
         
         useEffect(() => {
         if (isConversationSelected.selected &&isNotificationsFetched && specificNotificationToMarkAsRead) {
@@ -138,10 +83,6 @@ export default function MessagesPage() {
                 }, 1000);
                 return () => clearTimeout(timeoutId);
         }}, [isNotificationsFetched,isConversationSelected.selected, specificNotificationToMarkAsRead]);
-
-    
-
-
 
     if (isPending || !token || isLoading) return <CircularLoading />;
 

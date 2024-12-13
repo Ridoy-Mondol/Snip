@@ -26,7 +26,8 @@ export default function NotificationsPage() {
         queryKey: ["notifications"],
         queryFn: getNotifications,
         onSuccess: (data) => {
-            setNotifications(data.notifications);
+            const filteredNotifications = data.notifications.filter ((notification: NotificationProps) => notification.type !== "message"); 
+            setNotifications(filteredNotifications);
         },
     });
 

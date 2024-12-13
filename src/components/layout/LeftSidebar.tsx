@@ -13,7 +13,7 @@ import LogOutDialog from "../dialog/LogOutDialog";
 import { logout } from "@/utilities/fetch";
 import { AuthContext } from "@/app/(twitter)/layout";
 import { getFullURL } from "@/utilities/misc/getFullURL";
-import UnreadNotificationsBadge from "../misc/UnreadNotificationsBadge";
+import { GeneralNotificationsBadge, MessageNotificationsBadge } from "../misc/UnreadNotificationsBadge";
 
 export default function LeftSidebar() {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -113,7 +113,7 @@ export default function LeftSidebar() {
                                                 }`}
                                             >
                                                 <div className="badge-wrapper">
-                                                    <FaBell /> <UnreadNotificationsBadge />
+                                                    <FaBell /> <GeneralNotificationsBadge />
                                                 </div>
                                                 <span className="nav-title">Notifications</span>
                                             </div>
@@ -122,7 +122,11 @@ export default function LeftSidebar() {
                                     <li>
                                         <Link href="/messages">
                                             <div className={`nav-link ${pathname.startsWith("/messages") ? "active" : ""}`}>
-                                                <FaEnvelope /> <span className="nav-title">Messages</span>
+                                            <div className="badge-wrapper">
+                                                <FaEnvelope /> 
+                                                <MessageNotificationsBadge />
+                                                </div>
+                                               <span className="nav-title">Messages</span>
                                             </div>
                                         </Link>
                                     </li>
@@ -229,3 +233,4 @@ export default function LeftSidebar() {
         </>
     );
 }
+

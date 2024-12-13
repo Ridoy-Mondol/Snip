@@ -448,6 +448,7 @@ export const createNotification = async (
 };
 
 export const markNotificationsRead = async () => {
+    console.log("markNotificationsRead");
     const response = await fetch(`${HOST_URL}/api/notifications/read`, {
         next: {
             revalidate: 0,

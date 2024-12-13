@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const cookieStore = cookies();
     const token = cookieStore.get("token")?.value;
     const verifiedToken: UserProps = token && (await verifyJwtToken(token));
+    console.log('function called');
 
     if (!verifiedToken)
         return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });

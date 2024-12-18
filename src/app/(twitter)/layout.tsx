@@ -5,7 +5,7 @@ import { createContext } from "react";
 import Footer from "@/components/layout/Footer";
 import LeftSidebar from "@/components/layout/LeftSidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
-import OneSignalProvider from "@/components/onesignal/OneSignalProvider";
+import OneSignalProvider from "@/components/layout/OneSignalProvider";
 import { AuthProps } from "@/types/TokenProps";
 import useAuth from "@/hooks/useAuth";
 

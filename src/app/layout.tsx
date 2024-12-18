@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import "../styles/reset.scss";
 import "../styles/globals.scss";
 import Providers from "./providers";
-import OneSignalProvider from "@/components/onesignal/OneSignalProvider";
+import OneSignalProvider from "@/components/layout/OneSignalProvider";
 
 // export const metadata = {
 //     title: "Snip",

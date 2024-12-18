@@ -2,7 +2,7 @@
 import { Popover } from "@mui/material";
 import { useEffect, useState, useContext } from "react";
 import { useRouter } from "next/navigation";
-import { AuthContext } from "../../layout";
+import { AuthContext } from "@/context/AuthContext";
 import {
   Card,
   CardContent,

@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useContext, useEffect, useState } from "react";
 
-import { AuthContext } from "../layout";
+import { AuthContext } from "@/context/AuthContext";
 import { getNotifications, markNotificationsRead } from "@/utilities/fetch";
 import CircularLoading from "@/components/misc/CircularLoading";
 import NothingToShow from "@/components/misc/NothingToShow";

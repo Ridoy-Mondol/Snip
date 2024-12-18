@@ -13,7 +13,7 @@ import { updateBlog } from "@/utilities/fetch";
 import Uploader from "@/components/misc/Uploader";
 import { uploadFile } from "@/utilities/storage";
 import ProgressCircle from "@/components/misc/ProgressCircle";
-import { AuthContext } from "../../../layout";
+import { AuthContext } from "@/context/AuthContext";
 import { Editor } from "@tinymce/tinymce-react";
 import { ThemeContext } from "@/app/providers";
 

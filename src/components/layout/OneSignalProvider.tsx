@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useContext } from "react";
-import { AuthContext } from "@/app/(twitter)/layout";
+import { AuthContext } from "@/context/AuthContext";
 
 const OneSignalProvider = () => {
     const { token } = useContext(AuthContext);

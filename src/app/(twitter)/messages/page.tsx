@@ -6,7 +6,7 @@ import { BsEnvelopePlus } from "react-icons/bs";
 
 import NothingToShow from "@/components/misc/NothingToShow";
 import NewMessageDialog from "@/components/dialog/NewMessageDialog";
-import { AuthContext } from "../layout";
+import { AuthContext } from "@/context/AuthContext";
 import CircularLoading from "@/components/misc/CircularLoading";
 import { getUserMessages } from "@/utilities/fetch";
 import Conversation from "@/components/message/Conversation";

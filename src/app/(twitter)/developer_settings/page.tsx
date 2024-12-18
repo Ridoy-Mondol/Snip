@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useContext, useEffect } from "react";
-import { AuthContext } from "@/app/(twitter)/layout";
+import { AuthContext } from "@/context/AuthContext";
 import { Card, CardContent, Accordion, AccordionSummary, AccordionDetails, Typography, Container, Box, Button } from "@mui/material";
 import { AiOutlineDown } from "react-icons/ai"; 
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";

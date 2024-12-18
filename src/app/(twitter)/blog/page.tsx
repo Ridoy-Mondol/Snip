@@ -7,7 +7,7 @@ import { getFullURL } from "@/utilities/misc/getFullURL";
 import ProfileCard from "@/components/user/ProfileCard";
 import { Card, CardMedia, Typography, Container } from "@mui/material";
 import { MdArrowForward } from "react-icons/md";
-import { AuthContext } from "../layout";
+import { AuthContext } from "@/context/AuthContext";
 import CircularLoading from "@/components/misc/CircularLoading";
 import { getAllBlogs } from "@/utilities/fetch";
 interface BlogProps {

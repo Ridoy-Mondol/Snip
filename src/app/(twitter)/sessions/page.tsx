@@ -11,7 +11,7 @@ import {
     IconButton,
 } from "@mui/material";
 import { FaAndroid, FaWindows, FaApple, FaGlobe, FaTimes, FaLaptop, FaClock } from "react-icons/fa";
-import { AuthContext } from "../layout";
+import { AuthContext } from "@/context/AuthContext";
 import CircularLoading from "@/components/misc/CircularLoading";
 import { set } from "date-fns";
 

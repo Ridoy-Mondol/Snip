@@ -15,10 +15,8 @@ import Like from "./Like";
 import Share from "./Share";
 import PreviewDialog from "../dialog/PreviewDialog";
 import { getFullURL } from "@/utilities/misc/getFullURL";
-import { AuthContext } from "@/app/(twitter)/layout";
-import RetweetIcon from "../misc/RetweetIcon";
+import { AuthContext } from "@/context/AuthContext";
 import ProfileCard from "../user/ProfileCard";
-import { set } from "date-fns";
 import CircularLoading from "../misc/CircularLoading";
 import { LinearProgress, Button } from "@mui/material";
 

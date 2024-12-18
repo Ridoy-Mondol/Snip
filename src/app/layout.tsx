@@ -9,9 +9,9 @@ import "../styles/globals.scss";
 import Providers from "./providers";
 import OneSignalProvider from "@/components/onesignal/OneSignalProvider";
 
-export const metadata = {
-    title: "Snip",
-};
+// export const metadata = {
+//     title: "Snip",
+// };
 
 const roboto = localFont({
     src: "../fonts/Roboto.ttf",

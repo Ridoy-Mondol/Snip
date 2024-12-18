@@ -14,6 +14,13 @@ import GlobalLoading from "@/components/misc/GlobalLoading";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
 
+
+declare global {
+    interface Window {
+        OneSignal?: any;
+    }
+}
+
 export default function RootPage() {
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
     const [isLogInOpen, setIsLogInOpen] = useState(false);
@@ -55,7 +62,7 @@ export default function RootPage() {
             setSnackbar({ message: "An error occurred during login. Please try again.", severity: "error", open: true });
             console.error("Error in handleTestLogin:", error);
         }
-    };
+    }; 
     
 
     if (isLoggingAsTest) return <GlobalLoading />;

@@ -1,8 +1,13 @@
+"use client";
 import localFont from "next/font/local";
+import Head from "next/head";
+import Script from "next/script";
+import { usePathname } from "next/navigation";
 
 import "../styles/reset.scss";
 import "../styles/globals.scss";
 import Providers from "./providers";
+import OneSignalProvider from "@/components/onesignal/OneSignalProvider";
 
 export const metadata = {
     title: "Snip",
@@ -57,10 +62,22 @@ const poppins = localFont({
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    const shouldIncludeOneSignal = pathname !== "/";
     return (
         <html lang="en" className={`${roboto.variable} ${poppins.variable}`}>
+        <Head>
+         <title>Snip</title>
+       </Head>
             <body>
-                <Providers>{children}</Providers>
+            <Script
+                    src="https://cdn.onesignal.com/sdks/OneSignalSDK.js"
+                    strategy="afterInteractive"
+                />
+                <Providers>
+                     {shouldIncludeOneSignal && <OneSignalProvider />}
+                    {children}
+                </Providers>
             </body>
         </html>
     );

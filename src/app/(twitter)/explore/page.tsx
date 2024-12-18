@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useEffect } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 import { getAllTweets } from "@/utilities/fetch";

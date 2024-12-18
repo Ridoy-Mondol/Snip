@@ -5,6 +5,7 @@ import { createContext } from "react";
 import Footer from "@/components/layout/Footer";
 import LeftSidebar from "@/components/layout/LeftSidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
+import OneSignalProvider from "@/components/onesignal/OneSignalProvider";
 import { AuthProps } from "@/types/TokenProps";
 import useAuth from "@/hooks/useAuth";
 
@@ -17,6 +18,7 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
         <AuthContext.Provider value={auth}>
             <div className="layout">
                 <LeftSidebar />
+                <OneSignalProvider />
                 {children}
                 <RightSidebar />
                 <Footer />

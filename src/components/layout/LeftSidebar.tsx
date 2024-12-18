@@ -25,17 +25,61 @@ export default function LeftSidebar() {
 
     const router = useRouter();
     const pathname = usePathname();
-
+    
     const handleLogout = async () => {
         setIsLoggingOut(true);
+    
         const userAgent = navigator.userAgent;
         const ipAddress = await fetch("https://api.ipify.org?format=json")
-        .then((res) => res.json())
-        .then((data) => data.ip)
-        .catch(() => "Unknown IP");
-        await logout({ userAgent, ipAddress });
-        router.push("/");
+            .then((res) => res.json())
+            .then((data) => data.ip)
+            .catch(() => "Unknown IP");
+
+            if (window.OneSignal && await window.OneSignal.getSubscription()) {
+            const playerId = await window.OneSignal.getUserId();
+    
+            if (token?.id && playerId) {
+                const response = await fetch("/api/users/playerId/remove", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ playerId, userId: token.id }),
+                });
+    
+                if (!response.ok) {
+                    console.error("Failed to remove playerId from the database:", await response.text());
+                    return;
+                } else {
+                    console.log("Player ID successfully removed from the database.");
+                }
+            }
+        }
+            
+            if (window.OneSignal && await window.OneSignal.getSubscription()) {
+            window.OneSignal.push(() => {
+                window.OneSignal.setSubscription(false);
+
+                // Clear localStorage and cookies
+                window.OneSignal.deleteTags(["playerId"]);
+                localStorage.removeItem('OneSignalSDK');
+                document.cookie = "onesignal-pageview-count=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "onesignal-notification-prompt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            });
+         }
+    
+        try {
+            await logout({ userAgent, ipAddress });
+            router.push("/");
+        } catch (error) {
+            console.error("Error during logout:", error);
+            setIsLoggingOut(false);
+        }
     };
+    
+    
+    
+
+
+
 
     const handleAnchorClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(e.currentTarget);

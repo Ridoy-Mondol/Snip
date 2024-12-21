@@ -239,7 +239,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         {
          (userVoted || isPollExpired ) &&
         <div className="poll-options" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {updatedPollOptions.map((option) => {
+            {updatedPollOptions?.map((option) => {
                 const percentage = userVoted
                 ? calculateVotePercentage(option.votes) 
                 : '0';

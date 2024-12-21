@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { AuthContext } from "@/context/AuthContext";
-import { updateUserFollows } from "@/utilities/fetch";
+import { updateUserFollows, subscribeToNotifications } from "@/utilities/fetch";
 import { UserProps, UserResponse } from "@/types/UserProps";
 import CustomSnackbar from "../misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
@@ -12,6 +12,7 @@ export default function Follow({ profile }: { profile: UserProps }) {
     const [isButtonDisabled, setIsButtonDisabled] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
+    const [isSubscribed, setIsSubscribed] = useState(false);
 
     const { token, isPending } = useContext(AuthContext);
     const queryClient = useQueryClient();
@@ -76,7 +77,19 @@ export default function Follow({ profile }: { profile: UserProps }) {
         },
     });
 
-    const handleFollowclick = (e: React.MouseEvent) => {
+    const subscribeMutation = useMutation({
+        mutationFn: ({ subscriberId, subscribedToId, isSubscribed }: { subscriberId: string; subscribedToId: string; isSubscribed: boolean }) =>
+            subscribeToNotifications(subscriberId, subscribedToId, isSubscribed),
+        onError: () => {
+            setSnackbar({ message: "Something went wrong", severity: "error", open: true });
+        },
+        onSuccess: () => {
+            setSnackbar({ message: isSubscribed ?"Notifications enabled." : "Notifications disabled.", severity: "success", open: true });
+            window.location.reload();
+        },
+    });
+
+    const handleFollowClick = (e: React.MouseEvent) => {
         e.stopPropagation();
 
         if (!token) {
@@ -91,7 +104,7 @@ export default function Follow({ profile }: { profile: UserProps }) {
         const followers = profile.followers;
         const isFollowedByTokenOwner = followers?.some((user: { id: string }) => JSON.stringify(user.id) === tokenOwnerId);
 
-        if (!followMutation.isLoading && !followMutation.isLoading) {
+        if (!followMutation.isLoading && !unfollowMutation.isLoading) {
             if (isFollowedByTokenOwner) {
                 unfollowMutation.mutate(tokenOwnerId);
             } else {
@@ -100,12 +113,55 @@ export default function Follow({ profile }: { profile: UserProps }) {
         }
     };
 
+    const handleBellClick = () => {
+        if (!token) {
+            return setSnackbar({
+                message: "You need to login first to enable notifications.",
+                severity: "info",
+                open: true,
+            });
+        }
+
+        const subscriberId = token?.id;
+        const subscribedToId = profile.id;
+
+        subscribeMutation.mutate({ subscriberId, subscribedToId, isSubscribed });
+
+        setIsSubscribed(!isSubscribed);
+    };
+
     const handleMouseEnter = () => {
         setIsHovered(true);
     };
 
     const handleMouseLeave = () => {
         setIsHovered(false);
+    };
+
+    const checkSubscription = async () => {
+        if (!token || !profile.id) return;
+
+        const subscriberId = token.id;
+        const subscribedToId = profile.id;
+
+        try {
+            const response = await fetch("/api/users/subscribe/issubscribed", {
+                method: "GET",
+                headers: {
+                    "subscriberId": subscriberId,
+                    "subscribedToId": subscribedToId,
+                },
+            });
+
+            const data = await response.json();
+            if (data.success && data.isSubscribed) {
+                setIsSubscribed(true);
+            } else {
+                setIsSubscribed(false);
+            }
+        } catch (error) {
+            console.error("Failed to check subscription", error);
+        }
     };
 
     useEffect(() => {
@@ -120,6 +176,10 @@ export default function Follow({ profile }: { profile: UserProps }) {
     }, [isPending]);
 
     useEffect(() => {
+        checkSubscription();
+    }, [token, profile.id]);
+
+    useEffect(() => {
         const timer = setTimeout(() => {
             setIsButtonDisabled(false);
         }, 1500);
@@ -132,15 +192,36 @@ export default function Follow({ profile }: { profile: UserProps }) {
 
     return (
         <>
-            <button
-                onClick={handleFollowclick}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                className={conditionalClass}
-                disabled={isButtonDisabled}
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                }}
             >
-                {conditionalText}
-            </button>
+                <button
+                    onClick={handleFollowClick}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    className={conditionalClass}
+                    disabled={isButtonDisabled}
+                >
+                    {conditionalText}
+                </button>
+                {isFollowed && (
+                    <span
+                        style={{
+                            fontSize: "1.2rem",
+                            color: "#f39c12",
+                            cursor: "pointer",
+                        }}
+                        title={isSubscribed ? "Notifications enabled" : "Click to receive notifications"}
+                        onClick={handleBellClick}
+                    >
+                        {isSubscribed ? "🔕" : "🔔"}
+                    </span>
+                )}
+            </div>
             {snackbar.open && (
                 <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
             )}

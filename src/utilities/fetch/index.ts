@@ -95,8 +95,6 @@ export const createTweet = async (tweetData: {
     };
 }) => {
     try {
-        console.log("Sending tweet data:", tweetData);
-
         const response = await fetch(`${HOST_URL}/api/tweets/create`, {
             method: "POST",
             headers: {
@@ -294,6 +292,39 @@ export const updateUserFollows = async (followedUsername: string, tokenOwnerId: 
     if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
     return json;
 };
+
+export async function subscribeToNotifications(subscriberId: string, subscribedToId: string, isSubscribed: boolean) {
+    const route = isSubscribed ? '/api/users/unsubscribe' : '/api/users/subscribe';
+    let requestOptions: RequestInit;
+
+    if (isSubscribed) {
+        requestOptions = {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                "subscriberId": subscriberId,
+                "subscribedToId": subscribedToId,
+            }, 
+        };
+    } else {
+        requestOptions = {
+            method: "POST",  
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ subscriberId, subscribedToId }), 
+        };
+    }
+    const response = await fetch(route,requestOptions);
+
+    if (!response.ok) {
+        throw new Error(isSubscribed ? "Failed to unsubscribe from notifications" : "Failed to subscribe to notifications");
+    } else {
+        console.log(isSubscribed ? "Successfully unsubscribed from notifications" : "Successfully subscribed to notifications");
+    }
+
+    return response.json();
+}
 
 export const deleteTweet = async (tweetId: string, tweetAuthor: string, tokenOwnerId: string) => {
     const response = await fetch(`${HOST_URL}/api/tweets/${tweetAuthor}/${tweetId}/delete`, {

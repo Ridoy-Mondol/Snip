@@ -73,6 +73,11 @@ function getNotificationContent(type: string, notification: any): { title: strin
                 title: "Your post was retweeted!",
                 message: `${sender} retweeted your post.`,
             };
+            case "new post":
+            return {
+                title: "New Post!",
+                message: `${sender} created a new post.`,
+            };
         case "welcome":
             return {
                 title: "Welcome!",

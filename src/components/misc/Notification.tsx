@@ -119,6 +119,20 @@ export default function Notification({ notification, token }: { notification: No
                 </div>
             </div>
         );
+    } else if (notification.type === "new post") {
+        return (
+            <div className="notification">
+                <div className="icon-div follow">
+                    <RiChatFollowUpLine />
+                </div>
+                <div>
+                    {sharedJSX}{" "}
+                    <span className={!notification.isRead ? "bold" : ""}>
+                        Created a new post. Stay connected and discover their updates!
+                    </span>
+                </div>
+            </div>
+        );
     } else if (notification.type === "like") {
         return (
             <div className="notification">

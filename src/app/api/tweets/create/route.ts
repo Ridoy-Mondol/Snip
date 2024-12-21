@@ -3,7 +3,10 @@ import { cookies } from "next/headers";
 import { prisma } from "@/prisma/client";
 import { verifyJwtToken } from "@/utilities/auth";
 import { UserProps } from "@/types/UserProps";
+import { createNotification } from "@/utilities/fetch";
 import { addDays, addMinutes, addHours } from "date-fns";
+import { Select } from "@mui/material";
+import { use } from "react";
 
 export async function POST(request: NextRequest) {
     const { authorId, text, photoUrl, poll, isReply, repliedToId } = await request.json();
@@ -15,6 +18,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: false,
             message: "You are not authorized to perform this action.",
+        });
+    }
+
+    const secret = process.env.CREATION_SECRET_KEY;
+
+    if (!secret) {
+        return NextResponse.json({
+            success: false,
+            message: "Secret key not found.",
         });
     }
 
@@ -78,6 +90,49 @@ export async function POST(request: NextRequest) {
         });
 
         console.log("Tweet created successfully:", createdTweet);
+
+
+        const notificationContent = {
+            sender: {
+                username: verifiedToken.username,
+                name: verifiedToken.name,
+                photoUrl: verifiedToken.photoUrl,
+            },
+            content: null,
+        };
+
+        const subScribedUsers = await prisma.subscription.findMany({
+            where: {
+                subscribedToId: authorId,
+            },
+            select: {
+                subscriberId: true,
+            },
+        });
+
+        const subscriberIds = subScribedUsers && subScribedUsers.map((sub: any) => sub.subscriberId);
+
+        if (subscriberIds.length > 0) {
+            await Promise.all(
+                subscriberIds.map(async (subscriberId: string) => {
+                    try {
+                        const subscriber = await prisma.user.findUnique ({
+                            where: {
+                                id: subscriberId
+                            },
+                            select: {
+                                username: true
+                            }
+                        });
+                        if (subscriber?.username &&subscriber?.username !== "") {
+                        await createNotification(subscriber.username, "new post", secret, notificationContent);
+                        }
+                    } catch (error) {
+                        console.error(`Failed to create notification for subscriber ${subscriberId}:`, error);
+                    }
+                })
+            );
+        }
 
         return NextResponse.json({ success: true, data: createdTweet });
     } catch (error: any) {

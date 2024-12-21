@@ -5,7 +5,10 @@ import { prisma } from "@/prisma/client";
 import { verifyJwtToken } from "@/utilities/auth";
 import { UserProps } from "@/types/UserProps";
 
-export async function POST(request: NextRequest, { params: { username } }: { params: { username: string } }) {
+export async function POST(
+    request: NextRequest,
+    { params: { username } }: { params: { username: string } }
+) {
     const tokenOwnerId = await request.json();
 
     const cookieStore = cookies();
@@ -13,10 +16,16 @@ export async function POST(request: NextRequest, { params: { username } }: { par
     const verifiedToken: UserProps = token && (await verifyJwtToken(token));
 
     if (!verifiedToken)
-        return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
+        return NextResponse.json({
+            success: false,
+            message: "You are not authorized to perform this action.",
+        });
 
     if (verifiedToken.id !== tokenOwnerId)
-        return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
+        return NextResponse.json({
+            success: false,
+            message: "You are not authorized to perform this action.",
+        });
 
     try {
         await prisma.user.update({
@@ -31,6 +40,27 @@ export async function POST(request: NextRequest, { params: { username } }: { par
                 },
             },
         });
+
+        const unfollowedUser = await prisma.user.findUnique({
+            where: { username },
+            select: { id: true },
+        });
+
+        if (!unfollowedUser) {
+            return NextResponse.json({
+                success: false,
+                message: "User not found.",
+            });
+        }
+
+        // Unsubscribe from notifications
+        await prisma.subscription.deleteMany({
+            where: {
+                subscriberId: tokenOwnerId,
+                subscribedToId: unfollowedUser.id,
+            },
+        });
+
         return NextResponse.json({ success: true });
     } catch (error: unknown) {
         return NextResponse.json({ success: false, error });

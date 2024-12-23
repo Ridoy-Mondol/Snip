@@ -68,28 +68,27 @@ export default function RootPage() {
     
     const redirectTo =
   process.env.NODE_ENV === "production"
-    ? "https://snip-mu.vercel.app/auth/callback"
-    : "http://localhost:3000/auth/callback";
+    ? "https://snip-mu.vercel.app/auth/google/callback"
+    : "http://localhost:3000/auth/google/callback";
     console.log("Redirecting to:", redirectTo);
     const handleGoogleLogin = async () => {
         try {
-            const { data, error } = await supabase.auth.signInWithOAuth({
+            // const { error } = 
+            await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {
                     redirectTo,
                 },
             });
 
-            console.log("Supabase auth response:", { data, error });
-
-            if (error) {
-                setSnackbar({
-                    message: "Failed to log in with Google. Please try again.",
-                    severity: "error",
-                    open: true,
-                });
-                console.error("Google Login Error:", error);
-            }
+            // if (error) {
+            //     setSnackbar({
+            //         message: "Failed to log in with Google. Please try again.",
+            //         severity: "error",
+            //         open: true,
+            //     });
+            //     console.error("Google Login Error:", error);
+            // }
         } catch (error) {
             console.error("Error during Google login:", error);
             setSnackbar({

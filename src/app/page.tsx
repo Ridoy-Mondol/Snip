@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tooltip } from "@mui/material";
 import { FaArrowRight } from "react-icons/fa";
@@ -71,7 +71,7 @@ export default function RootPage() {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {
-                    redirectTo: `https://snip-mu.vercel.app/auth/google/callback`,
+                    redirectTo: `${process.env.NEXT_PUBLIC_HOST_URL}/auth/google/callback`,
                 },
             });
 
@@ -91,8 +91,7 @@ export default function RootPage() {
                 open: true,
             });
         }
-    };
-    
+    };  
 
     if (isLoggingAsTest) return <GlobalLoading />;
 

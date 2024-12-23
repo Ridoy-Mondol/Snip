@@ -229,30 +229,6 @@ export const createUser = async (newUser: string) =>
     return response.json();
 };
 
-export const saveGoogleUser = async ({ email, name, avatar_url }: { email: string; name: string; avatar_url: string }) => {
-    try {
-        const response = await fetch("/api/users/google", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, name, avatar_url }),
-        });
-
-        const data = await response.json();
-
-        if (!data.success) {
-            console.error("Error saving user data:", data.message);
-            return false;
-        } else {
-            return true;
-        }
-    } catch (error) {
-        console.error("Error saving user data:", error);
-        return false;
-    }
-};
-
 export const getUser = async (username: string) => {
     const response = await fetch(`${HOST_URL}/api/users/${username}`, {
         next: {

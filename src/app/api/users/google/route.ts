@@ -10,8 +10,6 @@ import { createNotification } from "@/utilities/fetch";
 export async function POST(request: NextRequest) {
     const { email, name, avatar_url } = await request.json();
 
-    console.log("Saving user data:", { email, name, avatar_url });
-
     try {
         const secret = process.env.CREATION_SECRET_KEY;
         if (!secret) {
@@ -35,7 +33,6 @@ export async function POST(request: NextRequest) {
 
         if (existingUser) {
                 // Login logic
-                console.log('executing login with user', existingUser);
                 const token = await generateJwt(existingUser);
 
                 await prisma.session.create({
@@ -59,7 +56,6 @@ export async function POST(request: NextRequest) {
         
         } else {
             // Signup logic
-            console.log('executing signup');
             let username = email.split("@")[0];
             let suffix = 1;
             while (await prisma.user.findUnique({ where: { username } })) {

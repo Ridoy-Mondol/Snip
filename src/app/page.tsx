@@ -66,11 +66,6 @@ export default function RootPage() {
         }
     }; 
     
-    const redirectTo =
-  process.env.NODE_ENV === "production"
-    ? "https://snip-mu.vercel.app/auth/google/callback"
-    : "http://localhost:3000/auth/google/callback";
-    console.log("Redirecting to:", redirectTo);
     const handleGoogleLogin = async () => {
         try {
             const { error } = await supabase.auth.signInWithOAuth({

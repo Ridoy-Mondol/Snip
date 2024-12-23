@@ -31,6 +31,7 @@
         "@emotion/styled": "^11.11.0",
         "@mui/material": "^5.13.1",
         "@prisma/client": "^4.14.1",
+        "@supabase/auth-helpers-nextjs": "^0.10.0",
         "@supabase/supabase-js": "^2.22.0",
         "@tanstack/react-query": "^4.29.7",
         "@tinymce/tinymce-react": "^5.1.1",

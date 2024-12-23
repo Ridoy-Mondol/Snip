@@ -4,8 +4,8 @@ generator client {
 
 datasource db {
     provider          = "postgresql"
-    url               = env("DATABASE_URL")
-    directUrl         = env("DIRECT_URL")
+    url               = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    directUrl         = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
 }
 
 model User {
@@ -18,7 +18,8 @@ model User {
     photoUrl         String?
     headerUrl        String?
     username         String         @unique @db.VarChar(20)
-    password         String
+    email            String?        @unique @db.VarChar(255)
+    password         String?
     isPremium        Boolean        @default(false)
     createdAt        DateTime       @default(now())
     updatedAt        DateTime       @default(now()) @updatedAt

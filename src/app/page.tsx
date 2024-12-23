@@ -6,6 +6,7 @@ import { Tooltip } from "@mui/material";
 import { FaArrowRight } from "react-icons/fa";
 import Image from "next/image";
 import Link from "next/link";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 import SignUpDialog from "@/components/dialog/SignUpDialog";
 import LogInDialog from "@/components/dialog/LogInDialog";
@@ -28,6 +29,7 @@ export default function RootPage() {
     const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
     const router = useRouter();
+    const supabase = createClientComponentClient();
 
     const handleSignUpClick = () => {
         setIsSignUpOpen(true);
@@ -64,6 +66,33 @@ export default function RootPage() {
         }
     }; 
     
+    const handleGoogleLogin = async () => {
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: "google",
+                options: {
+                    redirectTo: `${window.location.origin}/auth/google/callback`,
+                },
+            });
+
+            if (error) {
+                setSnackbar({
+                    message: "Failed to log in with Google. Please try again.",
+                    severity: "error",
+                    open: true,
+                });
+                console.error("Google Login Error:", error);
+            }
+        } catch (error) {
+            console.error("Error during Google login:", error);
+            setSnackbar({
+                message: "An error occurred during Google login. Please try again.",
+                severity: "error",
+                open: true,
+            });
+        }
+    };
+    
 
     if (isLoggingAsTest) return <GlobalLoading />;
 
@@ -95,6 +124,9 @@ export default function RootPage() {
                                 <span>Test account (Hover here!)</span>
                             </button>
                         </Tooltip>
+                        <button className="btn btn-light" onClick={handleGoogleLogin}>
+                            Login with Google
+                        </button>
                     </div>
                 </div>
             </main>

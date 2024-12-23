@@ -50,9 +50,44 @@ const SessionManager = () => {
         }
     };
 
+
+    const handleOneSignalUnsubscribe = async (userId: string) => {
+        if (window.OneSignal && (await window.OneSignal.getSubscription())) {
+            const playerId = await window.OneSignal.getUserId();
+            if (playerId) {
+                const response = await fetch("/api/users/playerId/remove", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ playerId, userId }),
+                });
+                if (!response.ok) {
+                    console.error("Failed to remove playerId:", await response.text());
+                    return false;
+                }
+                console.log("Player ID removed successfully.");
+            }
+    
+            window.OneSignal.push(() => {
+                window.OneSignal.setSubscription(false);
+                window.OneSignal.deleteTags(["playerId"]);
+                localStorage.removeItem("OneSignalSDK");
+                document.cookie =
+                    "onesignal-pageview-count=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie =
+                    "onesignal-notification-prompt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            });
+        }
+        return true;
+    };
+    
+
     const logoutFromSession = async (sessionId: string) => {
         try {
             setLoading(true);
+
+            const userId = token?.id;
+            if (userId) await handleOneSignalUnsubscribe(userId);
+
             const response = await fetch(`/api/auth/deletesession/${sessionId}`, {
                 method: "DELETE",
                 headers: {
@@ -81,6 +116,10 @@ const SessionManager = () => {
     const logoutFromAllSessions = async () => {
         try {
             setLoading(true);
+
+            const userId = token?.id;
+            if (userId) await handleOneSignalUnsubscribe(userId);
+            
             const response = await fetch(`/api/auth/delete_all_sessions/${token?.id}`, { 
                     method: "DELETE",
                     headers: {

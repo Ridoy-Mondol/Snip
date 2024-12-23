@@ -73,22 +73,21 @@ export default function RootPage() {
     console.log("Redirecting to:", redirectTo);
     const handleGoogleLogin = async () => {
         try {
-            // const { error } = 
-            await supabase.auth.signInWithOAuth({
+            const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {
-                    redirectTo,
+                    redirectTo: `${process.env.NEXT_PUBLIC_HOST_URL}/auth/google/callback`,
                 },
             });
 
-            // if (error) {
-            //     setSnackbar({
-            //         message: "Failed to log in with Google. Please try again.",
-            //         severity: "error",
-            //         open: true,
-            //     });
-            //     console.error("Google Login Error:", error);
-            // }
+            if (error) {
+                setSnackbar({
+                    message: "Failed to log in with Google. Please try again.",
+                    severity: "error",
+                    open: true,
+                });
+                console.error("Google Login Error:", error);
+            }
         } catch (error) {
             console.error("Error during Google login:", error);
             setSnackbar({

@@ -65,15 +65,22 @@ export default function RootPage() {
             console.error("Error in handleTestLogin:", error);
         }
     }; 
-
+    
+    const redirectTo =
+  process.env.NODE_ENV === "production"
+    ? "https://snip-mu.vercel.app/auth/callback"
+    : "http://localhost:3000/auth/callback";
+    console.log("Redirecting to:", redirectTo);
     const handleGoogleLogin = async () => {
         try {
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {
-                    redirectTo: `${process.env.NEXT_PUBLIC_HOST_URL}/auth/google/callback`,
+                    redirectTo,
                 },
             });
+
+            console.log("Supabase auth response:", { data, error });
 
             if (error) {
                 setSnackbar({

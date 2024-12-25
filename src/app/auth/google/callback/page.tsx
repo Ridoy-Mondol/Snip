@@ -85,7 +85,7 @@ export default function GoogleCallbackPage() {
 
     const saveGoogleUser = async ({ email, name, avatar_url, storedReferralCode }: { email: string; name: string; avatar_url: string; storedReferralCode: string | null }) => {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
         try {
             const response = await fetch("/api/users/google", {
                 method: "POST",
@@ -119,7 +119,7 @@ export default function GoogleCallbackPage() {
         } catch (error: any) {
             if (error.name === "AbortError") {
                 setSnackbar({
-                    message: "The request took too long. Please try again later.",
+                    message: "The request took too long to respond. Please try again later.",
                     severity: "error",
                     open: true,
                 });

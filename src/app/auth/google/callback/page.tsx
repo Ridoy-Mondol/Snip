@@ -14,6 +14,8 @@ export default function GoogleCallbackPage() {
         open: false,
     });
     const [isLoading, setIsLoading] = useState(true);
+    const [sessionData, setSessionData] = useState<any | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
     const router = useRouter();
     const supabase = createClientComponentClient();
     const storedReferralCode = localStorage.getItem('referralCode') || null;
@@ -21,57 +23,48 @@ export default function GoogleCallbackPage() {
     useEffect(() => {
         const fetchSessionAndSaveUser = async () => {
             try {
-                // Fetch the session data
                 const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-                if (sessionError) {
-                    console.error("Failed to retrieve session data:", sessionError);
-                    setSnackbar({
-                        message: "Failed to retrieve session data. Please try again.",
-                        severity: "error",
-                        open: true,
-                    });
-                    setIsLoading(false);
+                if (sessionError || !sessionData?.session?.user) {
+                    setRetryCount((prev) => prev + 1);
                     return;
                 }
 
-                const user = sessionData?.session?.user;
+                const user = sessionData.session.user;
+                const { email, user_metadata } = user;
+                const { name, avatar_url } = user_metadata || {};
 
-                if (user) {
-                    const { email, user_metadata } = user;
-                    const { name, avatar_url } = user_metadata || {};
-
-                    if (email && name && avatar_url) {
-                        await saveGoogleUser({ email, name, avatar_url, storedReferralCode });
-                    } else {
-                        console.error("User data missing (email, name, avatar_url).");
-                        setSnackbar({
-                            message: "Incomplete user data received. Please try again.",
-                            severity: "error",
-                            open: true,
-                        });
-                    }
+                if (email && name && avatar_url) {
+                    await saveGoogleUser({ email, name, avatar_url, storedReferralCode });
+                    setSessionData(sessionData.session);
                 } else {
+                    console.error("User data missing (email, name, avatar_url).");
                     setSnackbar({
-                        message: "User not authenticated. Please try logging in again.",
+                        message: "Incomplete user data received. Please try again.",
                         severity: "error",
                         open: true,
                     });
                 }
             } catch (error) {
                 console.error("Error during session fetch:", error);
-                setSnackbar({
-                    message: "An error occurred while fetching session data. Please try again.",
-                    severity: "error",
-                    open: true,
-                });
-            } finally {
-                setIsLoading(false);
+                setRetryCount((prev) => prev + 1);
             }
         };
 
-        fetchSessionAndSaveUser();
-    }, [supabase]);
+        if (!sessionData && retryCount < 5) {
+            const timeout = setTimeout(fetchSessionAndSaveUser, 1000);
+            return () => clearTimeout(timeout); 
+        }
+
+        if (retryCount >= 5 && !sessionData) {
+            setSnackbar({
+                message: "Failed to retrieve session data after multiple attempts. Please try again.",
+                severity: "error",
+                open: true,
+            });
+            setIsLoading(false);
+        }
+    }, [supabase, sessionData, retryCount]);
 
     const saveGoogleUser = async ({ email, name, avatar_url, storedReferralCode }: { email: string; name: string; avatar_url: string; storedReferralCode: string | null }) => {
         try {

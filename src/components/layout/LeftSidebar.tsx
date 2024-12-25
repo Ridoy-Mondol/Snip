@@ -255,7 +255,7 @@ export default function LeftSidebar() {
                                     <Link href="/developer_settings">Developer Settings</Link>
                                 </MenuItem>
                                 <MenuItem onClick={handleAnchorClose}>
-                                    <Link href="/cryto_currency">
+                                    <Link href="/crypto_currency">
                                         Crypto Currency
                                     </Link>
                                 </MenuItem>

@@ -26,8 +26,10 @@ export default function GoogleCallbackPage() {
                 const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
                 if (sessionError || !sessionData?.session?.user) {
+                    console.log("Session error:", sessionError);
                     if (retryCount < 5) {
                     setRetryCount((prev) => prev + 1);
+                    return;
                     }
                     console.log("Session error:", sessionError);
                     return;
@@ -39,7 +41,6 @@ export default function GoogleCallbackPage() {
 
                 if (email && name && avatar_url) {
                     await saveGoogleUser({ email, name, avatar_url, storedReferralCode });
-                    setSessionData(sessionData.session);
                     console.log("Session data:", sessionData);
                 } else {
                     console.error("User data missing (email, name, avatar_url).");
@@ -49,14 +50,29 @@ export default function GoogleCallbackPage() {
                         open: true,
                     });
                 }
+                setSessionData(sessionData.session);
             } catch (error) {
                 console.log("Error during session fetch:", error);
-                setRetryCount((prev) => prev + 1);
+                if (retryCount < 5) {
+                    setRetryCount((prev) => prev + 1);
+                } else {
+                    setSnackbar({
+                        message: "Error fetching session. Please try again.",
+                        severity: "error",
+                        open: true,
+                    });
+                    setIsLoading(false);
+                }
             }
         };
 
+        if (sessionData) {
+            setIsLoading(false);
+            return;
+        }
+
         if (!sessionData && retryCount < 5) {
-            const timeout = setTimeout(fetchSessionAndSaveUser, 1000);
+            const timeout = setTimeout(fetchSessionAndSaveUser, 500);
             return () => clearTimeout(timeout); 
         }
 

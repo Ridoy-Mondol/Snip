@@ -26,12 +26,10 @@ export default function GoogleCallbackPage() {
                 const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
                 if (sessionError || !sessionData?.session?.user) {
-                    console.log("Session error:", sessionError);
                     if (retryCount < 5) {
                     setRetryCount((prev) => prev + 1);
-                    return;
+                     return;
                     }
-                    console.log("Session error:", sessionError);
                     return;
                 }
 
@@ -52,7 +50,6 @@ export default function GoogleCallbackPage() {
                 }
                 setSessionData(sessionData.session);
             } catch (error) {
-                console.log("Error during session fetch:", error);
                 if (retryCount < 5) {
                     setRetryCount((prev) => prev + 1);
                 } else {
@@ -99,7 +96,7 @@ export default function GoogleCallbackPage() {
             const data = await response.json();
 
             if (!data.success) {
-                console.log("Error saving user data:", data.message);
+                console.error("Error saving user data:", data.message);
                 setSnackbar({
                     message: "Failed to save user data. Please try again.",
                     severity: "error",
@@ -117,10 +114,9 @@ export default function GoogleCallbackPage() {
                 router.push("/explore");
             }
         } catch (error: any) {
-            console.log("Error saving user data:", error);
+            console.error("Error saving user data:", error);
             setSnackbar({
-                // message: "An error occurred while saving user data. Please try again.",
-                message: error.message,
+                message: "An error occurred while saving user data. Please try again.",
                 severity: "error",
                 open: true,
             });

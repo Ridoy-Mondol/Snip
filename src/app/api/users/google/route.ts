@@ -91,82 +91,44 @@ export async function POST(request: NextRequest) {
                 },
             });
 
-            // if (referrerId && newUser) {
-            //     await prisma.referral.create({
-            //         data: {
-            //             referrerId: referrerId,
-            //             referredUserId: newUser.id,
-            //         }
-            //     });
+            const promises = [];
 
-            //     await prisma.user.update({
-            //         where: {
-            //             id: referrerId,
-            //         },
-            //         data: {
-            //             referralPoints: {
-            //                 increment: 10
-            //             }
-            //         }
-            //     })
-            // }
+            if (referrerId) {
+                promises.push(
+                    prisma.referral.create({
+                        data: {
+                            referrerId: referrerId,
+                            referredUserId: newUser.id,
+                        },
+                    }),
+                    
+                    prisma.user.update({
+                        where: { id: referrerId },
+                        data: {
+                            referralPoints: { increment: 10 },
+                        },
+                    })
+                );
+            }
+        
+            promises.push(createNotification(newUser.username, "welcome", secret));
+        
+            const token = await generateJwt(newUser);
 
-            // await createNotification(newUser.username, "welcome", secret);
-
-            // const token = await generateJwt(newUser);
-
-            // await prisma.session.create({
-            //     data: {
-            //         userId: newUser.id,
-            //         token,
-            //         device: deviceInfo,
-            //         browser: `${browser.name || "Unknown Browser"} ${browser.version || "Unknown Version"}`,
-            //         ipAddress: ipAddress.toString(),
-            //     },
-            // });
-
-
-
-            // Proceed with dependent operations if user creation succeeds
-    const promises = [];
-
-    if (referrerId) {
-        promises.push(
-            prisma.referral.create({
-                data: {
-                    referrerId: referrerId,
-                    referredUserId: newUser.id,
-                },
-            }),
-            prisma.user.update({
-                where: { id: referrerId },
-                data: {
-                    referralPoints: { increment: 10 },
-                },
-            })
-        );
-    }
-
-    // Send welcome notification
-    promises.push(createNotification(newUser.username, "welcome", secret));
-
-    // Generate JWT and create a session
-    const token = await generateJwt(newUser);
-    promises.push(
-        prisma.session.create({
-            data: {
-                userId: newUser.id,
-                token,
-                device: deviceInfo,
-                browser: `${browser.name || "Unknown Browser"} ${browser.version || "Unknown Version"}`,
-                ipAddress: ipAddress.toString(),
-            },
-        })
-    );
-
-    // Execute all dependent operations concurrently
-    await Promise.all(promises);
-
+            promises.push(
+                prisma.session.create({
+                    data: {
+                        userId: newUser.id,
+                        token,
+                        device: deviceInfo,
+                        browser: `${browser.name || "Unknown Browser"} ${browser.version || "Unknown Version"}`,
+                        ipAddress: ipAddress.toString(),
+                    },
+                })
+            );
+        
+            // Execute all dependent operations concurrently
+            await Promise.all(promises);        
 
 
             const response = NextResponse.json({ success: true });

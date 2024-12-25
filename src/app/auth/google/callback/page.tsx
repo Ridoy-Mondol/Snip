@@ -84,6 +84,8 @@ export default function GoogleCallbackPage() {
     }, [supabase, sessionData, retryCount]);
 
     const saveGoogleUser = async ({ email, name, avatar_url, storedReferralCode }: { email: string; name: string; avatar_url: string; storedReferralCode: string | null }) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         try {
             const response = await fetch("/api/users/google", {
                 method: "POST",
@@ -91,6 +93,7 @@ export default function GoogleCallbackPage() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ email, name, avatar_url, storedReferralCode }),
+                signal: controller.signal,
             });
 
             const data = await response.json();
@@ -114,13 +117,22 @@ export default function GoogleCallbackPage() {
                 router.push("/explore");
             }
         } catch (error: any) {
-            console.error("Error saving user data:", error);
-            setSnackbar({
-                message: "An error occurred while saving user data. Please try again.",
-                severity: "error",
-                open: true,
-            });
+            if (error.name === "AbortError") {
+                setSnackbar({
+                    message: "The request took too long. Please try again later.",
+                    severity: "error",
+                    open: true,
+                });
+            } else {
+                setSnackbar({
+                    message: "An error occurred while saving user data. Please try again.",
+                    severity: "error",
+                    open: true,
+                });
+            }
             localStorage.removeItem('referralCode');
+        } finally {
+            clearTimeout(timeoutId);
         }
     };
 

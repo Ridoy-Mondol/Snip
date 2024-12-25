@@ -8,7 +8,7 @@ import { getJwtSecretKey } from "@/utilities/auth";
 import { createNotification } from "@/utilities/fetch";
 
 export async function POST(request: NextRequest) {
-    const { email, name, avatar_url } = await request.json();
+    const { email, name, avatar_url, storedReferralCode } = await request.json();
 
     try {
         const secret = process.env.CREATION_SECRET_KEY;
@@ -61,8 +61,23 @@ export async function POST(request: NextRequest) {
             while (await prisma.user.findUnique({ where: { username } })) {
                 username = `${email.split("@")[0]}${suffix++}`;
             }
+            
+            let referrerId = null;
+            if (storedReferralCode) {
+                const referrer = await prisma.user.findUnique({
+                    where: {
+                       referralCode: storedReferralCode, 
+                    },
+                    select: {
+                        id: true,
+                    }
+                });
+
+                referrerId = referrer ? referrer.id : null;
+            }
 
             const apiKey = uuidv4();
+            const referralCode = generateReferralCode(username);
 
             const newUser = await prisma.user.create({
                 data: {
@@ -71,8 +86,30 @@ export async function POST(request: NextRequest) {
                     photoUrl: avatar_url,
                     username,
                     apiKey,
+                    referralCode,
+                    referrerId,
                 },
             });
+
+            if (referrerId && newUser) {
+                await prisma.referral.create({
+                    data: {
+                        referrerId: referrerId,
+                        referredUserId: newUser.id,
+                    }
+                });
+
+                await prisma.user.update({
+                    where: {
+                        id: referrerId,
+                    },
+                    data: {
+                        referralPoints: {
+                            increment: 10
+                        }
+                    }
+                })
+            }
 
             await createNotification(newUser.username, "welcome", secret);
 
@@ -141,4 +178,10 @@ const getIpAddress = (request: NextRequest) => {
     }
 
     return request.ip || "Unknown IP";
+};
+
+const generateReferralCode = (username: string): string => {
+    const usernamePart = username.substring(0, 3).toLowerCase();
+    const randomPart = Math.random().toString(36).substring(2, 8).toLowerCase();
+    return `${usernamePart.padEnd(3, "X")}-${randomPart}`;
 };

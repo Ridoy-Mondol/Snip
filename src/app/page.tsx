@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tooltip } from "@mui/material";
 import { FaArrowRight } from "react-icons/fa";
 import Image from "next/image";
@@ -29,7 +29,10 @@ export default function RootPage() {
     const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
     const router = useRouter();
+    const searchParams = useSearchParams();
     const supabase = createClientComponentClient();
+
+    const referralCode = searchParams.get('ref');
 
     const handleSignUpClick = () => {
         setIsSignUpOpen(true);
@@ -68,6 +71,9 @@ export default function RootPage() {
     
     const handleGoogleLogin = async () => {
         try {
+            if (referralCode) {
+                localStorage.setItem('referralCode', referralCode);
+            }
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {
@@ -129,7 +135,7 @@ export default function RootPage() {
                     </div>
                 </div>
             </main>
-            <SignUpDialog open={isSignUpOpen} handleSignUpClose={handleSignUpClose} />
+            <SignUpDialog open={isSignUpOpen} handleSignUpClose={handleSignUpClose} referralCode={referralCode} />
             <LogInDialog open={isLogInOpen} handleLogInClose={handleLogInClose} />
             <Link className="fixed-link text-muted" href="/explore">
                 Explore without signing in <FaArrowRight />

@@ -33,6 +33,20 @@ export async function POST(request: NextRequest) {
                 message: "Username already exists.",
             });
         }
+        
+        let referrerId = null;
+        if (userData.referralCode) {
+            const referrer = await prisma.user.findUnique({
+                where: {
+                    referralCode: userData.referralCode,
+                },
+                select: {
+                    id: true,
+                },
+            });
+
+            referrerId = referrer ? referrer.id : null;
+        }
 
         const userAgent = request.headers.get("user-agent") || "Unknown Device";
         const ipAddress = getIpAddress(request);
@@ -45,6 +59,7 @@ export async function POST(request: NextRequest) {
         let deviceInfo = os.name && os.version ? `${os.name} ${os.version}` : os.name || "Unknown OS";
 
         const apiKey = uuidv4();
+        const referralCode = generateReferralCode(userData.username);
 
         const newUser = await prisma.user.create({
             data: {
@@ -52,8 +67,30 @@ export async function POST(request: NextRequest) {
                 password: hashedPassword,
                 name: userData.name,
                 apiKey: apiKey,
+                referralCode: referralCode,
+                referrerId: referrerId,
             },
         });
+        
+        if (referrerId && newUser) {
+        await prisma.referral.create({
+            data: {
+                referrerId: referrerId,
+                referredUserId: newUser.id,
+            }
+        })
+
+        await prisma.user.update({
+            where: {
+                id: referrerId,
+            },
+            data: {
+                referralPoints: {
+                    increment: 10
+                }
+            }
+        })
+       }
 
         await createNotification(newUser.username, "welcome", secret);
 
@@ -123,3 +160,10 @@ const getIpAddress = (request: NextRequest) => {
     // Fallback to the request IP if no x-forwarded-for header
     return request.ip || "Unknown IP";
 };
+
+const generateReferralCode = (username: string): string => {
+    const usernamePart = username.substring(0, 3).toLowerCase();
+    const randomPart = Math.random().toString(36).substring(2, 8).toLowerCase();
+    return `${usernamePart.padEnd(3, "X")}-${randomPart}`;
+};
+

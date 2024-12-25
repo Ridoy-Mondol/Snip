@@ -4,8 +4,9 @@ generator client {
 
 datasource db {
     provider          = "postgresql"
-    url               = env("DATABASE_URL")
-    directUrl         = env("DIRECT_URL")
+    url               = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    directUrl         = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
+
 }
 
 model User {
@@ -23,6 +24,11 @@ model User {
     isPremium        Boolean        @default(false)
     createdAt        DateTime       @default(now())
     updatedAt        DateTime       @default(now()) @updatedAt
+    referrerId       String?        @db.VarChar(36)
+    referralCode     String?        @unique @db.VarChar(20)
+    referralPoints   Int            @default(0)
+    referralsMade    Referral[]     @relation("userReferralsMade")
+    referralsReceived Referral[]    @relation("userReferralsReceived")
     createdTweets    Tweet[]        @relation("userTweets")
     retweets         Tweet[]        @relation("userRetweets")
     likedTweets      Tweet[]        @relation("userLikes")
@@ -139,4 +145,14 @@ model Session {
     ipAddress  String   @db.VarChar(50)   // IP Address
     createdAt  DateTime @default(now())   // Session start time
     updatedAt  DateTime @default(now()) @updatedAt // Last updated time
+}
+
+model Referral {
+    id             String   @id @default(uuid())
+    referrerId     String   @db.VarChar(36)
+    referredUserId String  @db.VarChar(36)
+    createdAt      DateTime @default(now())
+    
+    referrer       User     @relation("userReferralsMade", fields: [referrerId], references: [id])
+    referredUser   User?    @relation("userReferralsReceived", fields: [referredUserId], references: [id])
 }

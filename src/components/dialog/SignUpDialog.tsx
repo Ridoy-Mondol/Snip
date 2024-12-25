@@ -11,7 +11,7 @@ import CircularLoading from "../misc/CircularLoading";
 import CustomSnackbar from "../misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
 
-export default function SignUpDialog({ open, handleSignUpClose }: SignUpDialogProps) {
+export default function SignUpDialog({ open, handleSignUpClose, referralCode }: SignUpDialogProps) {
     const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
     const router = useRouter();
@@ -25,8 +25,6 @@ export default function SignUpDialog({ open, handleSignUpClose }: SignUpDialogPr
             .required("Username is required.")
             .test("checkUserExists", "User already exists.", async (value) => {
                 if (value) {
-                    // const response = await checkUserExists(value);
-                    // if (response.success) return false;
                     const response = await checkUserExists(value);
                     if (response.success) return false; 
                 }
@@ -57,6 +55,7 @@ export default function SignUpDialog({ open, handleSignUpClose }: SignUpDialogPr
                     ...values,
                     browser: userAgent,
                     ip: ipAddress,
+                    referralCode: referralCode || undefined,
                 };
             const response = await createUser(JSON.stringify(payload));
             if (!response.success) {

@@ -8,6 +8,7 @@ export type LogInDialogProps = {
 export type SignUpDialogProps = {
     open: boolean;
     handleSignUpClose: () => void;
+    referralCode: string | null;
 };
 
 export type NewTweetDialogProps = {

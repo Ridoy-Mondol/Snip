@@ -16,6 +16,7 @@ export default function GoogleCallbackPage() {
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
     const supabase = createClientComponentClient();
+    const storedReferralCode = localStorage.getItem('referralCode') || null;
 
     useEffect(() => {
         const fetchSessionAndSaveUser = async () => {
@@ -41,7 +42,7 @@ export default function GoogleCallbackPage() {
                     const { name, avatar_url } = user_metadata || {};
 
                     if (email && name && avatar_url) {
-                        await saveGoogleUser({ email, name, avatar_url });
+                        await saveGoogleUser({ email, name, avatar_url, storedReferralCode });
                     } else {
                         console.error("User data missing (email, name, avatar_url).");
                         setSnackbar({
@@ -72,14 +73,14 @@ export default function GoogleCallbackPage() {
         fetchSessionAndSaveUser();
     }, [supabase]);
 
-    const saveGoogleUser = async ({ email, name, avatar_url }: { email: string; name: string; avatar_url: string }) => {
+    const saveGoogleUser = async ({ email, name, avatar_url, storedReferralCode }: { email: string; name: string; avatar_url: string; storedReferralCode: string | null }) => {
         try {
             const response = await fetch("/api/users/google", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email, name, avatar_url }),
+                body: JSON.stringify({ email, name, avatar_url, storedReferralCode }),
             });
 
             const data = await response.json();
@@ -91,6 +92,7 @@ export default function GoogleCallbackPage() {
                     severity: "error",
                     open: true,
                 });
+                localStorage.removeItem('referralCode');
                 return;
             } else {
                 setSnackbar({
@@ -98,6 +100,7 @@ export default function GoogleCallbackPage() {
                     severity: "success",
                     open: true,
                 });
+                localStorage.removeItem('referralCode');
                 router.push("/explore");
             }
         } catch (error) {
@@ -107,6 +110,7 @@ export default function GoogleCallbackPage() {
                 severity: "error",
                 open: true,
             });
+            localStorage.removeItem('referralCode');
         }
     };
 

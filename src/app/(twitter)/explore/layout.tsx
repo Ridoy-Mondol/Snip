@@ -4,6 +4,7 @@ export const metadata: Metadata = {
     title: "Explore - Snip",
     description: "Discover trending posts and explore new content on Snip.",
     openGraph: {
+      type: "website",
       title: "Explore - Snip",
       description: "Discover trending posts and explore new content on Snip.",
       url: `${process.env.NEXT_PUBLIC_HOST_URL}/explore`,

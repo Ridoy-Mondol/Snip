@@ -1,17 +1,42 @@
-"use client";
 import localFont from "next/font/local";
-import Head from "next/head";
 import Script from "next/script";
-import { usePathname } from "next/navigation";
+import { Metadata } from "next";
 
 import "../styles/reset.scss";
 import "../styles/globals.scss";
 import Providers from "./providers";
 import OneSignalProvider from "@/components/layout/OneSignalProvider";
 
-// export const metadata = {
-//     title: "Snip",
-// };
+export const metadata: Metadata = {
+    title: "Snip",
+    description: "A social platform to explore and share trending content.",
+    openGraph: {
+        type: "website",
+        title: "Snip - Explore and Share Content",
+        description: "A social platform to explore and share trending content.",
+        url: process.env.NEXT_PUBLIC_HOST_URL,
+        images: [
+            {
+                url: `${process.env.NEXT_PUBLIC_HOST_URL}/assets/og-img.png`,
+                type: "image/png",
+                width: 1200,
+                height: 630,
+                alt: "Snip Platform OpenGraph Image",
+            },
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Snip - Explore and Share Content",
+        description: "A social platform to explore and share trending content.",
+        images: [
+            {
+                url: `${process.env.NEXT_PUBLIC_HOST_URL}/assets/og-img.png`,
+                alt: "Snip Twitter Image",
+            },
+        ],
+    },
+};
 
 const roboto = localFont({
     src: "../fonts/Roboto.ttf",
@@ -62,20 +87,15 @@ const poppins = localFont({
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-    const pathname = usePathname();
-    const shouldIncludeOneSignal = pathname !== "/";
     return (
         <html lang="en" className={`${roboto.variable} ${poppins.variable}`}>
-        <Head>
-         <title>Snip</title>
-       </Head>
             <body>
             <Script
                     src="https://cdn.onesignal.com/sdks/OneSignalSDK.js"
                     strategy="afterInteractive"
                 />
                 <Providers>
-                     {shouldIncludeOneSignal && <OneSignalProvider />}
+                    <OneSignalProvider />
                     {children}
                 </Providers>
             </body>

@@ -1,4 +1,14 @@
 import { Metadata } from "next";
+import { getFullURL } from "@/utilities/misc/getFullURL";
+
+function getImageUrl(photoUrl: string): string {
+    const HOST_URL = process.env.NEXT_PUBLIC_HOST_URL;
+    if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
+        return photoUrl;
+      }
+    
+      return getFullURL(photoUrl) || `${HOST_URL}/assets/og-img.png`; 
+  }
 
 export async function generateMetadata({
   params,
@@ -13,7 +23,9 @@ export async function generateMetadata({
     const data = await response.json();
 
     if (data && data.tweet) {
-      const { text, author } = data.tweet;
+      const { text, author, photoUrl } = data.tweet;
+
+      const imageUrl = getImageUrl(photoUrl || "/assets/og-img.png");
 
       return {
         title: `${author.username}'s Tweet - Snip`,
@@ -25,7 +37,7 @@ export async function generateMetadata({
           url: `${HOST_URL}/${username}/tweets/${tweetId}`,
           images: [
             {
-              url: `${HOST_URL}/assets/og-img.png`,
+              url: imageUrl,
               type: "image/jpeg",
               width: 1200,
               height: 630,
@@ -39,7 +51,7 @@ export async function generateMetadata({
           description: text || `${author.username} shared something interesting.`,
           images: [
             {
-              url: `${HOST_URL}/assets/og-img.png`,
+              url: imageUrl,
               alt: `${author.username}'s Tweet`,
             },
           ],

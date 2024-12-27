@@ -9,7 +9,7 @@ export const metadata: Metadata = {
       url: `${process.env.NEXT_PUBLIC_HOST_URL}/explore`,
       images: [
         {
-          url: `${process.env.NEXT_PUBLIC_HOST_URL}/assets/favicon.png`,
+          url: `${process.env.NEXT_PUBLIC_HOST_URL}/assets/og-img.png`,
           type: "image/jpeg",
           width: 1200,
           height: 630,
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
       description: "Discover the latest tweets in the Explore section.",
       images: [
         {
-          url: `${process.env.NEXT_PUBLIC_HOST_URL}/assets/favicon.png`,
+          url: `${process.env.NEXT_PUBLIC_HOST_URL}/assets/og-img.png`,
           alt: "Explore Snip Twitter Image",
         },
       ],

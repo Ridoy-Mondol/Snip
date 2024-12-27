@@ -1,6 +1,11 @@
 import { Metadata } from "next";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 
+function stripHTMLTags(input: string): string {
+    const doc = new DOMParser().parseFromString(input, "text/html");
+    return doc.body.textContent || "";
+}
+
 interface BlogLayoutParams {
   id: string;
 }
@@ -22,14 +27,15 @@ export async function generateMetadata({
 
     if (data.success && data.blog) {
       const blog = data.blog;
+      const cleanContent = stripHTMLTags(blog.content);
 
       return {
         title: blog.title,
-        description: blog.content.slice(0, 150),
+        description: cleanContent.slice(0, 150),
         openGraph: {
           type: "article",
           title: blog.title,
-          description: blog.content.slice(0, 150),
+          description: cleanContent.slice(0, 150),
           url: `${HOST_URL}/blog/${id}`,
           images: [
             {
@@ -41,7 +47,7 @@ export async function generateMetadata({
         twitter: {
           card: "summary_large_image",
           title: blog.title,
-          description: blog.content.slice(0, 150),
+          description: cleanContent.slice(0, 150),
           images: [getFullURL(blog.imageUrl || `${HOST_URL}/assets/default-blog.jpg`)],
         },
       };

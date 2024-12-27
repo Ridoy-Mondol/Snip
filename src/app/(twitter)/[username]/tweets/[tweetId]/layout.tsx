@@ -13,15 +13,15 @@ export async function generateMetadata({
     const data = await response.json();
 
     if (data && data.tweet) {
-      const { content, author } = data.tweet;
+      const { text, author } = data.tweet;
 
       return {
         title: `${author.username}'s Tweet - Snip`,
-        description: content || `${author.username} shared something interesting.`,
+        description: text || `${author.username} shared something interesting.`,
         openGraph: {
           type: "website",
           title: `${author.username}'s Tweet - Snip`,
-          description: content || `${author.username} shared something interesting.`,
+          description: text || `${author.username} shared something interesting.`,
           url: `${HOST_URL}/${username}/tweets/${tweetId}`,
           images: [
             {
@@ -36,7 +36,7 @@ export async function generateMetadata({
         twitter: {
           card: "summary_large_image",
           title: `${author.username}'s Tweet - Snip`,
-          description: content || `${author.username} shared something interesting.`,
+          description: text || `${author.username} shared something interesting.`,
           images: [
             {
               url: `${HOST_URL}/assets/og-img.png`,

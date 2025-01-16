@@ -1,0 +1,36 @@
+name: Deploy to aaPanel via SSH
+
+on:
+  push:
+    branches:
+      - main  # Trigger deployment on push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up SSH
+      - name: Set up SSH Agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # Step 3: Add server's public key to known_hosts
+      - name: Add server to known_hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      # Step 4: Deploy to server
+      - name: Deploy to aaPanel Server
+        run: |
+          ssh ${{ secrets.SERVER_IP }} << 'EOF'
+            cd ${{ secrets.PROJECT_PATH }} || exit 1
+            git pull origin main || exit 1
+            npm install || exit 1
+            npm run build || exit 1
+          EOF

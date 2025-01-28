@@ -23,12 +23,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
         }
 
+        if (!authorId) {
+            console.error("Author ID is required.");
+            return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
+        }
+
         if (verifiedToken.id !== authorId) {
             console.error("User is not authorized to create a blog for this author ID.");
             return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
         }
 
-        if (!title || !category || !content || !authorId) {
+        if (!title || !category || !content) {
             return NextResponse.json({ success: false, message: "All fields are required!" });
         }
 

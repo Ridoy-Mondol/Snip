@@ -136,6 +136,30 @@ export const createBlog = async (blog: { title: string, category: string, conten
     return json;
 };
 
+export const draftBlog = async (blog: { 
+    title: string, 
+    category: string, 
+    content: string, 
+    authorId: string, 
+    photoUrl: string,
+    schedule: string, 
+}) => {
+    const response = await fetch(`${HOST_URL}/api/blogs/draft`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(blog),
+    })
+
+    const json = await response.json();
+
+    if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
+
+    return json;
+
+}
+
 export const updateBlog = async (blog: { 
     id: string; 
     title?: string; 

@@ -1,6 +1,18 @@
 "use client";
 import { useState, useContext } from "react";
-import { TextField, MenuItem } from "@mui/material";
+import { 
+  TextField,
+  MenuItem,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputLabel,
+  Select,
+  Typography, 
+} from "@mui/material";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +21,7 @@ import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
 import CircularLoading from "@/components/misc/CircularLoading";
-import { createBlog } from "@/utilities/fetch";
+import { createBlog, draftBlog } from "@/utilities/fetch";
 import Uploader from "@/components/misc/Uploader";
 import { uploadFile } from "@/utilities/storage";
 import ProgressCircle from "@/components/misc/ProgressCircle";
@@ -24,6 +36,9 @@ export default function CreateBlogPage() {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<"publish" | "draft">("publish");
+  const [isSchedule, setIsSchedule] = useState<"false" | "true">("false");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { token, isPending } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
@@ -41,7 +56,19 @@ export default function CreateBlogPage() {
       setLoading(false);
     },
   });
-
+  
+  const draftMutation = useMutation({
+    mutationFn: draftBlog,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["drafts"] });
+      alert("Saved successfully to draft");
+    },
+    onError: (error) => {
+      console.error(error);
+      setLoading(false);
+    },
+  });
+  
   const handlePhotoChange = (file: File) => {
     if (file.size > 1048576) {
       setImageError("The image size should not exceed 1MB.");
@@ -50,22 +77,42 @@ export default function CreateBlogPage() {
     setPhotoFile(file);
     setImageError(null);
   };
-
+  
   const validationSchema = yup.object({
     title: yup
       .string()
       .required("Title is required.")
       .max(255, "Title should be of maximum 255 characters length."),
-    category: yup.string().required("Category is required."),
-    content: yup.string().required("Content cannot be empty."),
+    category: yup.string().when("actionType", {
+      is: "publish",
+      then: (schema) => schema.required("Category is required"),
+      otherwise: (schema) => schema.optional(),
+    }),
+    content: yup.string().when("actionType", {
+      is: "publish",
+      then: (schema) => schema.required("Content cannot be empty"),
+      otherwise: (schema) => schema.optional(),
+    }),
+    photoUrl: yup.string().when("actionType", {
+      is: "publish",
+      then: (schema) =>
+        schema.required("Image is required").url("Invalid image URL."),
+      otherwise: (schema) => schema.optional(),
+    }),
+    // schedule: yup.string().when("isSchedule", {
+    //     is: "true",
+    //     then: (schema) => schema.required("Please select a publish time"),
+    //     otherwise: (schema) => schema.optional()
+    // })
   });
-
+  
   const formik = useFormik({
     initialValues: {
       title: "",
       category: "",
       content: "",
       photoUrl: "",
+      schedule: "",
     },
     validationSchema: validationSchema,
     onSubmit: async (values, { resetForm }) => {
@@ -73,43 +120,64 @@ export default function CreateBlogPage() {
         console.error("Author ID is missing.");
         return;
       }
-
-      if (imageError) {
-        console.error("Image error exists:", imageError);
-        return;
-      }
-
-      if (!values.photoUrl && !photoFile) {
-        setImageError("Please upload an image in less than 1MB.");
-        return;
-      }
-
-      const blogData = { ...values, authorId: token.id };
-
-      try {
-        setLoading(true);
-        if (photoFile) {
+  
+      // Handle image upload if a file is selected
+      if (photoFile) {
+        try {
           const path = await uploadFile(photoFile);
           if (!path) {
-            setImageError("Error uploading image to Supabase. Please upload an image in less than 1MB.");
-            setLoading(false);
-            return
+            setImageError("Error uploading image. Please try again.");
+            return;
           }
-          values.photoUrl = path;
+          values.photoUrl = path; 
           setPhotoFile(null);
+          setImageError(null);
+        } catch (error) {
+          setImageError("Error uploading image. Please try again.");
+          return;
         }
-        if (!imageError) {
-        await mutation.mutateAsync(blogData);
+      } else if (actionType === "publish" && !values.photoUrl) {
+        setImageError("Please upload an image.");
+        return;
+      }
+  
+      if (actionType === "draft") {
+        values.photoUrl = values.photoUrl || "";
+      }
+  
+      const blogData = { ...values, authorId: token.id };
+  
+      try {
+        setLoading(true);
+        if (actionType === "publish") {
+          await mutation.mutateAsync(blogData);
+        } else if (actionType === "draft") {
+          await draftMutation.mutateAsync(blogData);
+        }
+  
         resetForm();
         setCount(0);
         setShowDropzone(false);
-        }
+        setIsModalOpen(false);
       } catch (error) {
-        console.error("Failed to upload image or create blog:", error);
+        console.error("Failed to submit blog:", error);
+      } finally {
         setLoading(false);
+        setIsModalOpen(false);
       }
     },
-  });
+  });  
+
+  const handleDraftClick = () => {
+      if (formik.values.title && formik.values.category && formik.values.content && photoFile) {
+        setIsModalOpen(true); 
+      } else {
+        setActionType("draft");
+        setIsSchedule("false");
+        formik.handleSubmit();
+      }
+  }
+
 
   const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -263,11 +331,75 @@ export default function CreateBlogPage() {
             <button
               className={`btn ${formik.isValid ? "" : "disabled"}`}
               disabled={!formik.isValid}
-              type="submit"
+              type="button"
+              onClick={handleDraftClick}
             >
-              Create Blog
+              Draft
+            </button>
+            <button
+              className={`btn ${formik.isValid ? "" : "disabled"}`}
+              disabled={!formik.isValid}
+              type="submit"
+              onClick={() => {
+                setActionType("publish");
+                setIsSchedule("false");
+                formik.handleSubmit()
+              }}
+            >
+              Publish
             </button>
           </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>
+          <Typography variant="h6" fontWeight="bold">
+            Schedule Draft
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" mb={2}>
+            Choose when you'd like the blog to be published.
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel id="schedule-select-label">Publish Time</InputLabel>
+            <Select
+              labelId="schedule-select-label"
+              name="schedule"
+              value={formik.values.schedule}
+              onChange={formik.handleChange}
+            >
+              <MenuItem value="1h">1 Hour later</MenuItem>
+              <MenuItem value="2h">2 Hours later</MenuItem>
+              <MenuItem value="5h">5 Hours later</MenuItem>
+              <MenuItem value="10h">10 Hours later</MenuItem>
+              <MenuItem value="1D">1 Day later</MenuItem>
+              <MenuItem value="7D">7 Days later</MenuItem>
+              <MenuItem value="Never">Never</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" variant="outlined" onClick={() => setIsModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            color="primary"
+            variant="contained"
+            disabled={!formik.values.schedule}
+            type="submit"
+            onClick={() => {
+              setActionType("draft");
+              setIsSchedule("true");
+              formik.handleSubmit();
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+      )}
 
           {/* Emoji Picker */}
           {showPicker && (

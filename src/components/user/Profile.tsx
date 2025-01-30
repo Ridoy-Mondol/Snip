@@ -189,8 +189,8 @@ export default function Profile({ profile }: { profile: UserProps }) {
                     <span>Blogs</span>
                 </Link>
                 <Link
-                    className={`profile-nav-link ${pathname === `/${profile.username}/blogs` ? "active" : ""}`}
-                    href={`/${profile.username}/blogs`}
+                    className={`profile-nav-link ${pathname === `/${profile.username}/drafts` || pathname === `/${profile.username}/drafts/blogs` ? "active" : ""}`}
+                    href={`/${profile.username}/drafts`}
                 >
                     <span>Drafts</span>
                 </Link>

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
             switch (schedule) {
                 case "1h":
-                    scheduledTime = new Date(currentTime.getTime() + 1 * 60 * 60 * 1000);
+                    scheduledTime = new Date(currentTime.getTime() + 2 * 60 * 1000);
                     break;
                 case "2h":
                     scheduledTime = new Date(currentTime.getTime() + 2 * 60 * 60 * 1000);

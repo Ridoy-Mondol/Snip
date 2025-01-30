@@ -144,7 +144,7 @@ export const draftBlog = async (blog: {
     photoUrl: string,
     schedule: string, 
 }) => {
-    const response = await fetch(`${HOST_URL}/api/blogs/draft`, {
+    const response = await fetch(`${HOST_URL}/api/blogs/draft/create`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -166,9 +166,42 @@ export const updateBlog = async (blog: {
     category?: string; 
     content?: string; 
     authorId: string; 
-    photoUrl?: string; 
+    photoUrl?: string;
+    schedule?: string; 
 }) => {
     const response = await fetch(`${HOST_URL}/api/blogs/update/${blog.id}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            title: blog.title,
+            category: blog.category,
+            content: blog.content,
+            photoUrl: blog.photoUrl,
+            authorId: blog.authorId,
+        }),
+    });
+
+    const json = await response.json();
+
+    if (!json.success) {
+        throw new Error(json.message || "Something went wrong while updating the blog.");
+    }
+
+    return json;
+};
+
+export const publishBlog = async (blog: { 
+    id: string; 
+    title?: string; 
+    category?: string; 
+    content?: string; 
+    authorId: string; 
+    photoUrl?: string;
+    schedule?: string; 
+}) => {
+    const response = await fetch(`${HOST_URL}/api/blogs/draft/publish/${blog.id}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -196,6 +229,20 @@ export const getAllBlogs = async () => {
         next: {
             revalidate: 0,
         },
+    });
+    const json = await response.json();
+    if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
+    return json;
+};
+
+export const getDraftBlogs = async (userId: string) => {
+    const response = await fetch(`${HOST_URL}/api/blogs/draft/get`, {
+        next: {
+            revalidate: 0,
+        },
+        headers: {
+            'userId': userId,
+          },
     });
     const json = await response.json();
     if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     try {
         const blogId = params.id;
-        const { title, category, content, authorId, photoUrl } = await request.json();
+        const { title, category, content, authorId, photoUrl, schedule } = await request.json();
 
         const cookieStore = cookies();
         const token = cookieStore.get("token")?.value;
@@ -29,13 +29,45 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
             return NextResponse.json({ success: false, message: "You are not authorized to perform this action." });
         }
 
+        let scheduledTime: Date | null = null;
+        if (schedule) {
+            const currentTime = new Date();
+
+            switch (schedule) {
+                case "1h":
+                    scheduledTime = new Date(currentTime.getTime() + 2 * 60 * 1000);
+                    break;
+                case "2h":
+                    scheduledTime = new Date(currentTime.getTime() + 2 * 60 * 60 * 1000);
+                    break;
+                case "5h":
+                    scheduledTime = new Date(currentTime.getTime() + 5 * 60 * 60 * 1000);
+                    break;
+                case "10h":
+                    scheduledTime = new Date(currentTime.getTime() + 10 * 60 * 60 * 1000);
+                    break;
+                case "1D":
+                    scheduledTime = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000);
+                    break;
+                case "7D":
+                    scheduledTime = new Date(currentTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case "Never":
+                    scheduledTime = null;
+                    break;
+                default:
+                    scheduledTime = null;
+            }
+        }
+
         console.log("Updating the blog in the database...");
 
-        const updateData: { title?: string; category?: string; content?: string; imageUrl?: string } = {};
+        const updateData: { title?: string; category?: string; content?: string; imageUrl?: string; scheduledAt?: Date | null } = {};
         if (title) updateData.title = title;
         if (category) updateData.category = category;
         if (content) updateData.content = content;
         if (photoUrl) updateData.imageUrl = photoUrl;
+        if(schedule) updateData.scheduledAt = scheduledTime;
 
         const updatedBlog = await prisma.blog.update({
             where: { id: blogId },

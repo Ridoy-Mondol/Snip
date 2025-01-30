@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useEffect, useContext } from "react";
-import { TextField, MenuItem } from "@mui/material";
+import { 
+  TextField,
+  MenuItem,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputLabel,
+  Select,
+  Typography, 
+} from "@mui/material";
 import { useFormik } from "formik";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
@@ -9,7 +21,7 @@ import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
 import CircularLoading from "@/components/misc/CircularLoading";
-import { updateBlog } from "@/utilities/fetch";
+import { updateBlog, publishBlog } from "@/utilities/fetch";
 import Uploader from "@/components/misc/Uploader";
 import { uploadFile } from "@/utilities/storage";
 import ProgressCircle from "@/components/misc/ProgressCircle";
@@ -25,6 +37,9 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
   const [blog, setBlog] = useState<any>(null);
   const [isLoading, setLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<"publish" | "update">("update");
+  const [isSchedule, setIsSchedule] = useState<"false" | "true">("false");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { token, isPending } = useContext(AuthContext);
   const queryClient = useQueryClient();
@@ -58,10 +73,26 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
     mutationFn: updateBlog,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      if (blog?.status === "draft") {
+        window.location.href = `${token?.username}/drafts/blogs`;
+      }
       window.location.href = `/blog/${blogId}`;
     },
     onError: (error) => {
       console.error("Failed to update blog:", error);
+      setLoading(false);
+    },
+  });
+
+  // Mutation to publish the blog
+  const publishMutation = useMutation({
+    mutationFn: publishBlog,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["publish"] });
+      window.location.href = `/blog/${blogId}`;
+    },
+    onError: (error) => {
+      console.error("Failed to publish blog:", error);
       setLoading(false);
     },
   });
@@ -83,6 +114,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
       category: blog?.category || "",
       content: blog?.content || "",
       photoUrl: blog?.photoUrl || "",
+      schedule: blog?.scheduledAt || "",
     },
     enableReinitialize: true,
     onSubmit: async (values) => {
@@ -93,6 +125,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
         content?: string;
         authorId: string;
         photoUrl?: string;
+        schedule?: string;
       } = {
         id: blogId,
         authorId: token?.id || "",
@@ -101,6 +134,7 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
       if (values.title) updateData.title = values.title;
       if (values.category) updateData.category = values.category;
       if (values.content) updateData.content = values.content;
+      if (values.schedule) updateData.schedule = values.schedule;
 
       if (photoFile) {
         setLoading(true);
@@ -115,7 +149,12 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
       }
 
       try {
-        await mutation.mutateAsync(updateData);
+        setLoading(true);
+        if (actionType === "publish") {
+          publishMutation.mutateAsync(updateData);
+        } else {
+          await mutation.mutateAsync(updateData);
+        }
         setCount(0);
         setShowDropzone(false);
       } catch (error) {
@@ -124,6 +163,15 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
       }
     },
   });
+
+  const handleUpdate = () => {
+     if (blog.status === "draft") {
+       setIsModalOpen(true);
+     } else {
+       setActionType("update");
+       formik.handleSubmit();
+     }
+  }
 
   // Handle text change
   const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,10 +313,77 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
               <FaRegSmile />
             </button>
             <ProgressCircle maxChars={5000} count={count} />
-            <button className="btn" type="submit">
-              Update Blog
+            
+            {
+            (blog?.status === "draft" && (blog.title || formik.values.title) && (blog.category || formik.values.category) && (blog.content || formik.values.content) && (blog.imageUrl || photoFile)) &&
+            <button
+              className={`btn ${formik.isValid ? "" : "disabled"}`}
+              disabled={!formik.isValid}
+              type="submit"
+              onClick={() => {
+                setActionType("publish");
+                setIsSchedule("false");
+                formik.handleSubmit()
+              }}
+            >
+              Publish
+            </button>
+            }
+            <button className="btn" type="button" onClick={handleUpdate}>
+              Update
             </button>
           </div>
+
+          {/* Modal */}
+      {isModalOpen && (
+        <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>
+          <Typography variant="h6" fontWeight="bold">
+            Schedule Draft
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" mb={2}>
+            Choose when you&apos;d like the blog to be published.
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel id="schedule-select-label">Publish Time</InputLabel>
+            <Select
+              labelId="schedule-select-label"
+              name="schedule"
+              value={formik.values.schedule}
+              onChange={formik.handleChange}
+            > 
+              <MenuItem value="1h">1 Hour later</MenuItem>
+              <MenuItem value="2h">2 Hours later</MenuItem>
+              <MenuItem value="5h">5 Hours later</MenuItem>
+              <MenuItem value="10h">10 Hours later</MenuItem>
+              <MenuItem value="1D">1 Day later</MenuItem>
+              <MenuItem value="7D">7 Days later</MenuItem>
+              <MenuItem value="Never">Never</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" variant="outlined" onClick={() => setIsModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            color="primary"
+            variant="contained"
+            disabled={!formik.values.schedule}
+            type="submit"
+            onClick={() => {
+              setActionType("update");
+              setIsSchedule("true");
+              formik.handleSubmit();
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+      )}
 
           {showPicker && (
             <div className="emoji-picker">

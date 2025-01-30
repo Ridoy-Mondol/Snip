@@ -99,11 +99,6 @@ export default function CreateBlogPage() {
         schema.required("Image is required").url("Invalid image URL."),
       otherwise: (schema) => schema.optional(),
     }),
-    // schedule: yup.string().when("isSchedule", {
-    //     is: "true",
-    //     then: (schema) => schema.required("Please select a publish time"),
-    //     otherwise: (schema) => schema.optional()
-    // })
   });
   
   const formik = useFormik({
@@ -360,7 +355,7 @@ export default function CreateBlogPage() {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="textSecondary" mb={2}>
-            Choose when you'd like the blog to be published.
+            Choose when you&apos;d like the blog to be published.
           </Typography>
           <FormControl fullWidth>
             <InputLabel id="schedule-select-label">Publish Time</InputLabel>

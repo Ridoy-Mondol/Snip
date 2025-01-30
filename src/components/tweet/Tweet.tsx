@@ -291,7 +291,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
 
         {token && !userVoted && !isPollExpired && (
             <div className="vote-options" style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {updatedPollOptions.map((option) => (
+                {updatedPollOptions?.map((option) => (
                     <Button
                         key={option.id}
                         variant="contained"

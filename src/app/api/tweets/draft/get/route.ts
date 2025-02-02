@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/prisma/client";
 
 export async function GET(request: NextRequest) {
+    const userId = request.headers.get("userId");
+
+    if (!userId) {
+        return NextResponse.json({ success: false, message: 'You are not authorized to visit it' }, { status: 400 });
+    }
+
     let page = request.nextUrl.searchParams.get("page");
     const limit = "10";
 
@@ -16,7 +22,8 @@ export async function GET(request: NextRequest) {
     try {
         const tweets = await prisma.tweet.findMany({
             where: {
-                status: "published",
+                status: "draft",
+                authorId: userId,
                 isReply: false,
             },
             select: {
@@ -64,6 +71,7 @@ export async function GET(request: NextRequest) {
                         photoUrl: true,
                         isReply: true,
                         createdAt: true,
+                        scheduledAt: true,
                         author: {
                             select: {
                                 id: true,

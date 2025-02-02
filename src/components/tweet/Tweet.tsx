@@ -189,8 +189,6 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                 onClick={handlePropagation}
                 className="tweet-avatar"
                 href={`/${tweet.author.username}`}
-                // onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
-                // onMouseLeave={() => setAnchorEl(null)}
                 onMouseEnter={handlePopoverOpen}
                 onMouseLeave={handlePopoverClose}
             >
@@ -207,8 +205,6 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                         onClick={(e) => e.stopPropagation()}
                         className="tweet-author-link"
                         href={`/${tweet.author.username}`}
-                        // onMouseEnter={(e) => setAnchorEl(e.currentTarget)}
-                        // onMouseLeave={() => setAnchorEl(null)}
                         onMouseEnter={handlePopoverOpen}
                         onMouseLeave={handlePopoverClose}
                     >
@@ -222,10 +218,10 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                         </span>
                         <span className="text-muted">@{tweet.author.username}</span>
                     </Link>
-                    <Tooltip title={formatDateExtended(tweet.createdAt)} placement="top">
+                    <Tooltip title= {tweet.scheduledAt ? formatDateExtended(tweet.scheduledAt) : formatDateExtended(tweet.createdAt)} placement="top">
                         <span className="text-muted date">
                             <span className="middle-dot">·</span>
-                            {formatDate(tweet.createdAt)}
+                            {tweet.scheduledAt ? formatDate(tweet.scheduledAt) : formatDate(tweet.createdAt)}
                         </span>
                     </Tooltip>
                 </section>
@@ -235,7 +231,6 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         <h4 className="poll-title" style={{ fontSize: "16px", fontWeight: "bold", marginBottom: "1rem" }}>
             {tweet.text}
         </h4>
-
         {
          (userVoted || isPollExpired ) &&
         <div className="poll-options" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -320,7 +315,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
 ) : (
     <>
 
-<div className="tweet-text">
+         <div className="tweet-text">
                     {tweet.isReply && (
                         <Link
                             onClick={handlePropagation}
@@ -360,9 +355,8 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                         />
                     </div>
                 )}
-
-    </>
-)}
+            </>
+           )}
 
                 <div onClick={(e) => e.stopPropagation()} className="tweet-bottom">
                     <Reply tweet={tweet} />
@@ -382,7 +376,6 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                 onClose={() => setAnchorEl(null)}
                 disableRestoreFocus
             >
-                {/* <ProfileCard user={tweet.author} /> */}
                 <ProfileCard username={hoveredProfile} token={token} />
             </Popover>
             

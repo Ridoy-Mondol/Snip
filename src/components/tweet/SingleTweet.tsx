@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { RxDotsHorizontal } from "react-icons/rx";
-import { Avatar, Menu, MenuItem, TextField } from "@mui/material";
+import { Avatar, Menu, MenuItem, TextField, Dialog,DialogActions, DialogTitle, } from "@mui/material";
 import { AiFillTwitterCircle } from "react-icons/ai";
 
 import { TweetProps } from "@/types/TweetProps";
@@ -28,7 +28,6 @@ import { sleepFunction } from "@/utilities/misc/sleep";
 
 import { useFormik } from "formik";
 import * as yup from "yup";
-import { json } from "stream/consumers";
 import ProgressCircle from "../misc/ProgressCircle";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
@@ -49,6 +48,7 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
     const [count, setCount] = useState(0);
     const [showPicker, setShowPicker] = useState(false);
     const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
+    const [openModal, setOpenModal] = useState<boolean>(false);
 
     const queryClient = useQueryClient();
     const router = useRouter();
@@ -216,6 +216,43 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
         }
     };
 
+
+    const handleConfirmAction = () => {
+        setOpenModal(false);
+        handlePublish();
+      };
+
+    const handlePublish = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch("/api/tweets/draft/publish", {
+                method: "PATCH",
+                headers: {
+                  'Content-Type': 'application/json',
+                  'authorId': tweet.authorId || "",
+                  'postId': tweet.id || "",
+                }
+            });
+    
+            const data = await response.json();
+    
+            if (data.success) {
+                setLoading(false);
+                setSnackbar({
+                    message: "Post published successfully.",
+                    severity: "success",
+                    open: true,
+                });
+            } else {
+              console.error("Failed to delete post:", data.message)
+              setLoading(false);
+            }
+          } catch(error) {
+            console.error("Error publishing post:", error);
+            setLoading(false);
+          }
+    }
+
     const calculateVotePercentage = (votes: number) => {
         if (totalVotes === 0) return '0';
         return ((votes / totalVotes) * 100).toFixed(0);
@@ -224,7 +261,7 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
     const isPollTweet = !tweet.text && tweet.pollOptions?.length > 0;
 
 
-    if (formik.isSubmitting) {
+    if (formik.isSubmitting || loading) {
         return <CircularLoading />;
     }
 
@@ -267,8 +304,14 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                                     !tweet.isPoll &&
                                     <MenuItem className="delete" onClick={()=> setIsUpdateOpen(true)}>
                                         Update
-                                    </MenuItem>
-                                    }
+                                    </MenuItem>       
+                                }
+                                {
+                                tweet.status === "draft" &&
+                                <MenuItem className="delete"  onClick={()=> setOpenModal(true)}>
+                                    Publish
+                                </MenuItem>
+                                }
                                 </Menu>
                             </>
                         )}
@@ -489,6 +532,22 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
            </dialog>
          </div>
         )}
+
+        {/* Confirmation Modal */}
+      <Dialog open={openModal} onClose={() => setOpenModal(false)}>
+        <DialogTitle>
+          Are you sure you want to publish this post?
+        </DialogTitle>
+        <DialogActions>
+          <Button onClick={() => setOpenModal(false)} color="secondary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmAction} color="primary" autoFocus>
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+
         </div>
     );
 }

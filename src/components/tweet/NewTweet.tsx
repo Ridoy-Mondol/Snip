@@ -1,5 +1,21 @@
 import { useState } from "react";
-import { TextField, Avatar, Button, Box, Typography, IconButton, Grid } from "@mui/material";
+import { 
+    TextField,
+    MenuItem,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    InputLabel,
+    Select,
+    Typography,
+    Avatar,
+    Box,
+    IconButton, 
+    Grid
+  } from "@mui/material";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,7 +27,7 @@ import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
 import CircularLoading from "../misc/CircularLoading";
-import { createTweet } from "@/utilities/fetch";
+import { createTweet, draftTweet } from "@/utilities/fetch";
 import { NewTweetProps } from "@/types/TweetProps";
 import Uploader from "../misc/Uploader";
 import { getFullURL } from "@/utilities/misc/getFullURL";
@@ -27,6 +43,8 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     const [question, setQuestion] = useState("");
     const [options, setOptions] = useState(["", ""]);
     const [pollLength, setPollLength] = useState({ days: 0, hours: 0, minutes: 0 });
+    const [actionType, setActionType] = useState<"publish" | "draft">("publish");
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const queryClient = useQueryClient();
 
@@ -65,12 +83,25 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
         },
     });
 
+    const draftMutation = useMutation({
+        mutationFn: draftTweet,
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["drafts"] });
+          setIsModalOpen(false);
+          alert("Saved successfully to draft");
+        },
+        onError: (error) => {
+          console.error(error);
+          alert("Failed to save your draft. Please try again.");
+        },
+      });
+
     const handlePhotoChange = (file: File) => {
         setPhotoFile(file);
     };
 
     const validationSchema = yup.object({
-        text: yup
+            text: yup
             .string()
             .max(280, "Tweet text should be of maximum 280 characters length.")
             .nullable(),
@@ -99,10 +130,10 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
             options: ["", ""],
             length: { days: 0, hours: 0, minutes: 0 },
           },
+          schedule: "",
         },
         validationSchema: validationSchema,
         onSubmit: async (values, { resetForm, setFieldValue }) => {
-            console.log("Poll Data Before Submit:", values.poll);
           try {
               if (!showPoll) console.log("Poll not shown.");
               if (!question.trim()) console.log("Poll question is empty.");
@@ -132,7 +163,11 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
               }
       
               console.log("Final Payload:", payload);
-              await mutation.mutateAsync(payload);
+              if (actionType === "publish") {
+                await mutation.mutateAsync(payload);
+              } else if (actionType === "draft") {
+                await draftMutation.mutateAsync(payload);
+              }
               console.log("Poll Data Before Reset:", payload.poll);
               resetForm();
               setCount(0);
@@ -147,6 +182,12 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
           }
         }
     });
+
+    const handleDraftClick = () => {
+        if (formik.isValid) {
+           setIsModalOpen(true); 
+        }
+    }
 
     const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setCount(e.target.value.length);
@@ -323,7 +364,16 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                   Remove Poll
               </Button>
               <Button
-                  type="submit"  // This makes it a submit button
+                  type="button"
+                  variant="contained"
+                  color="primary"
+                  disabled={!question || options.some((opt) => !opt.trim())}
+                  onClick={handleDraftClick}
+              >
+                  Draft
+              </Button>
+              <Button
+                  type="submit"
                   variant="contained"
                   color="primary"
                   disabled={!question || options.some((opt) => !opt.trim())}
@@ -331,6 +381,57 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                   Post
               </Button>
           </Box>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>
+          <Typography variant="h6" fontWeight="bold">
+            Schedule Post
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" mb={2}>
+            Choose when you&apos;d like the post to be published.
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel id="schedule-select-label">Publish Time</InputLabel>
+            <Select
+              labelId="schedule-select-label"
+              name="schedule"
+              value={formik.values.schedule}
+              onChange={formik.handleChange}
+            >
+              <MenuItem value="1h">1 Hour later</MenuItem>
+              <MenuItem value="2h">2 Hours later</MenuItem>
+              <MenuItem value="5h">5 Hours later</MenuItem>
+              <MenuItem value="10h">10 Hours later</MenuItem>
+              <MenuItem value="1D">1 Day later</MenuItem>
+              <MenuItem value="7D">7 Days later</MenuItem>
+              <MenuItem value="Never">Never</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" variant="outlined" onClick={() => setIsModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            color="primary"
+            variant="contained"
+            disabled={!formik.values.schedule}
+            type="submit"
+            onClick={() => {
+              setActionType("draft");
+              formik.handleSubmit();
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+      )}
+
       </Box>
     </form>
     )
@@ -395,10 +496,77 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                     </button>
 
                     <ProgressCircle maxChars={280} count={count} />
-                    <button className={`btn ${formik.isValid ? "" : "disabled"}`} disabled={!formik.isValid} type="submit">
+                    <button 
+                    className={`btn ${(formik.values.text || photoFile) ? "" : "disabled"}`} 
+                    disabled={(!formik.values.text && !photoFile)}
+                    type="button"
+                    onClick={handleDraftClick}
+                    >
+                        Draft
+                    </button>
+                    <button 
+                    className={`btn ${(formik.values.text || photoFile) ? "" : "disabled"}`} 
+                    disabled={(!formik.values.text && !photoFile)} 
+                    type="submit"
+                    onClick={() => {
+                        setActionType("publish");
+                        formik.handleSubmit()
+                    }}
+                    >
                         Tweet
                     </button>
                 </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>
+          <Typography variant="h6" fontWeight="bold">
+            Schedule Post
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" mb={2}>
+            Choose when you&apos;d like the post to be published.
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel id="schedule-select-label">Publish Time</InputLabel>
+            <Select
+              labelId="schedule-select-label"
+              name="schedule"
+              value={formik.values.schedule}
+              onChange={formik.handleChange}
+            >
+              <MenuItem value="1h">1 Hour later</MenuItem>
+              <MenuItem value="2h">2 Hours later</MenuItem>
+              <MenuItem value="5h">5 Hours later</MenuItem>
+              <MenuItem value="10h">10 Hours later</MenuItem>
+              <MenuItem value="1D">1 Day later</MenuItem>
+              <MenuItem value="7D">7 Days later</MenuItem>
+              <MenuItem value="Never">Never</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" variant="outlined" onClick={() => setIsModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            color="primary"
+            variant="contained"
+            disabled={!formik.values.schedule}
+            type="submit"
+            onClick={() => {
+              setActionType("draft");
+              formik.handleSubmit();
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+      )}
+
                 {showPicker && (
                     <div className="emoji-picker">
                         <Picker

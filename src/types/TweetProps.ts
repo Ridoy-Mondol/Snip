@@ -55,7 +55,9 @@ export type PollOptionProps = {
 export type TweetProps = {
     id: string;
     text: string;
+    status: string;
     createdAt: Date;
+    scheduledAt: Date;
     author: UserProps;
     authorId: string;
     photoUrl: string | null; // photoUrl is now nullable

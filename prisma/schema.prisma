@@ -62,6 +62,8 @@ model Blog {
 model Tweet {
     id          String   @id @default(uuid())
     text        String?   @db.VarChar(280)
+    status      String   @default("published")
+    scheduledAt DateTime?
     createdAt   DateTime @default(now())
     author      User     @relation("userTweets", fields: [authorId], references: [id])
     authorId    String

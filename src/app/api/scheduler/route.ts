@@ -6,6 +6,21 @@ export async function PATCH(request: NextRequest) {
         const currentTime = new Date();
         currentTime.setSeconds(0, 0);
 
+
+        await prisma.tweet.updateMany({
+            where: {
+                status: "draft",
+                scheduledAt: {
+                    lte: currentTime,
+                },
+            },
+            data: {
+                status: "published",
+                scheduledAt: null,
+                createdAt: new Date(),
+            }
+        });
+
         await prisma.blog.updateMany({
             where: {
                 status: "draft",
@@ -20,8 +35,8 @@ export async function PATCH(request: NextRequest) {
             }
         });
 
-        console.log("Blog published successfully from draft.");
-        const response = NextResponse.json({ success: true, message: "Blog published successfully." });
+        console.log("Published successfully from draft.");
+        const response = NextResponse.json({ success: true, message: "Published successfully." });
 
         response.headers.set('Access-Control-Allow-Origin', '*');
         response.headers.set('Access-Control-Allow-Methods', 'GET');
@@ -30,7 +45,7 @@ export async function PATCH(request: NextRequest) {
         return response;
 
     } catch (error: unknown) {
-        console.error("Error occurred while publishing the blog:", error);
+        console.error("Error occurred while publishing:", error);
         const response= NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
 
         response.headers.set('Access-Control-Allow-Origin', '*');

@@ -13,6 +13,20 @@ export const getAllTweets = async (page = "1") => {
     return json;
 };
 
+export const getDraftTweets = async (page = "1", userId: string) => {
+    const response = await fetch(`${HOST_URL}/api/tweets/draft/get?page=${page}`, {
+        next: {
+            revalidate: 0,
+        },
+        headers: {
+            userId: userId,
+        }
+    });
+    const json = await response.json();
+    if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
+    return json;
+};
+
 export const getRelatedTweets = async () => {
     const response = await fetch(`${HOST_URL}/api/tweets/related`, {
         next: {
@@ -118,9 +132,54 @@ export const createTweet = async (tweetData: {
 };
 
 
+export const draftTweet = async (tweetData: {
+    text: string;
+    authorId: string;
+    photoUrl: string;
+    poll: null | {
+        question: string;
+        options: string[];
+        length: {
+            days: number;
+            hours: number;
+            minutes: number;
+        };
+    };
+    schedule: string,
+}) => {
+    try {
+        const response = await fetch(`${HOST_URL}/api/tweets/draft/create`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(tweetData),
+        });
+
+        const json = await response.json();
+
+        if (!json.success) {
+            throw new Error(json.message || "Something went wrong.");
+        }
+
+        console.log("Draft created successfully:", json);
+        return json;
+    } catch (error) {
+        console.error("Error creating draft:", error);
+        throw error; 
+    }
+};
 
 
-export const createBlog = async (blog: { title: string, category: string, content: string, authorId: string, photoUrl: string }) => {
+
+
+export const createBlog = async (blog: { 
+    title: string, 
+    category: string, 
+    content: string, 
+    authorId: string, 
+    photoUrl: string 
+}) => {
     const response = await fetch(`${HOST_URL}/api/blogs/create`, {
         method: "POST",
         headers: {

@@ -37,7 +37,7 @@ export default function CreateBlogPage() {
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"publish" | "draft">("publish");
-  const [isSchedule, setIsSchedule] = useState<"false" | "true">("false");
+  // const [isSchedule, setIsSchedule] = useState<"false" | "true">("false");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { token, isPending } = useContext(AuthContext);
@@ -168,7 +168,7 @@ export default function CreateBlogPage() {
         setIsModalOpen(true); 
       } else {
         setActionType("draft");
-        setIsSchedule("false");
+        // setIsSchedule("false");
         formik.handleSubmit();
       }
   }
@@ -337,7 +337,7 @@ export default function CreateBlogPage() {
               type="submit"
               onClick={() => {
                 setActionType("publish");
-                setIsSchedule("false");
+                // setIsSchedule("false");
                 formik.handleSubmit()
               }}
             >
@@ -386,7 +386,7 @@ export default function CreateBlogPage() {
             type="submit"
             onClick={() => {
               setActionType("draft");
-              setIsSchedule("true");
+              // setIsSchedule("true");
               formik.handleSubmit();
             }}
           >

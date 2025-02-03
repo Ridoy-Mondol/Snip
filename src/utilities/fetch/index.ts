@@ -472,7 +472,7 @@ export const deleteTweet = async (tweetId: string, tweetAuthor: string, tokenOwn
 export const updateTweet = async (
     tweetId: string,
     tokenId: string,
-    updatedTweetData: { text: string; authorId: string }
+    updatedTweetData: { text: string; authorId: string; schedule: string; }
 ) => {
     try {
         const response = await fetch(`${HOST_URL}/api/tweets/${updatedTweetData.authorId}/${tweetId}/update`, {

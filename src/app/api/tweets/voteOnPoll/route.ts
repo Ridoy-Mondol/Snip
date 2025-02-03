@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if the user has already voted for this poll
-        const existingVote = await prisma.vote.findFirst({
+        const existingVote = await prisma.vote.findMany({
             where: {
                 userId,
                 pollOption: { tweetId },

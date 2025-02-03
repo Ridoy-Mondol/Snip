@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { RxDotsHorizontal } from "react-icons/rx";
-import { Avatar, Menu, MenuItem, TextField, Dialog,DialogActions, DialogTitle, } from "@mui/material";
+import { Avatar, Menu, MenuItem, TextField, Dialog,DialogActions, DialogTitle, DialogContent, FormControl, InputLabel, Select, Typography,  } from "@mui/material";
 import { AiFillTwitterCircle } from "react-icons/ai";
 
 import { TweetProps } from "@/types/TweetProps";
@@ -49,6 +49,7 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
     const [showPicker, setShowPicker] = useState(false);
     const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
     const [openModal, setOpenModal] = useState<boolean>(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const queryClient = useQueryClient();
     const router = useRouter();
@@ -71,11 +72,11 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
     });
 
     const updateMutation = useMutation({
-        mutationFn: (updatedTweetData: { text: string; authorId: string }) => updateTweet(tweet.id, JSON.stringify(token?.id), updatedTweetData),
+        mutationFn: (updatedTweetData: { text: string; authorId: string; schedule: string; }) => updateTweet(tweet.id, JSON.stringify(token?.id), updatedTweetData),
         onSuccess: () => {
             queryClient.invalidateQueries(["tweets", tweet.author.username]);
             setSnackbar({
-                message: "Tweet updated successfully.",
+                message: "Post updated successfully.",
                 severity: "success",
                 open: true,
             });
@@ -129,6 +130,7 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
         initialValues: {
             text: tweet.text,
             authorId: tweet.authorId,
+            schedule: "",
         },
         enableReinitialize: true,
         validationSchema,
@@ -252,6 +254,15 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
             setLoading(false);
           }
     }
+
+    const handleUpdate = () => {
+        if (tweet.status === "draft") {
+          setIsModalOpen(true);
+        } else {
+          formik.handleSubmit();
+          setIsModalOpen(false);
+        }
+     }
 
     const calculateVotePercentage = (votes: number) => {
         if (totalVotes === 0) return '0';
@@ -502,7 +513,8 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                     <button
                         className={`btn ${formik.isValid ? "" : "disabled"}`}
                         disabled={!formik.isValid || isUpdating}
-                        type="submit"
+                        type="button"
+                        onClick={handleUpdate}
                     >
                         {isUpdating ? "Updating..." : "Save"}
                     </button>
@@ -532,6 +544,56 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
            </dialog>
          </div>
         )}
+
+            {/* Modal */}
+      {isModalOpen && (
+        <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>
+          <Typography variant="h6" fontWeight="bold">
+            Schedule Draft
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" mb={2}>
+            Choose when you&apos;d like the post to be published.
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel id="schedule-select-label">Publish Time</InputLabel>
+            <Select
+              labelId="schedule-select-label"
+              name="schedule"
+              value={formik.values.schedule}
+              onChange={formik.handleChange}
+            > 
+              <MenuItem value="1h">1 Hour later</MenuItem>
+              <MenuItem value="2h">2 Hours later</MenuItem>
+              <MenuItem value="5h">5 Hours later</MenuItem>
+              <MenuItem value="10h">10 Hours later</MenuItem>
+              <MenuItem value="1D">1 Day later</MenuItem>
+              <MenuItem value="7D">7 Days later</MenuItem>
+              <MenuItem value="Never">Never</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" variant="outlined" onClick={() => setIsModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            color="primary"
+            variant="contained"
+            disabled={!formik.values.schedule}
+            type="submit"
+            onClick={() => {
+              formik.handleSubmit();
+              setIsModalOpen(false);
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+      )}
 
         {/* Confirmation Modal */}
       <Dialog open={openModal} onClose={() => setOpenModal(false)}>

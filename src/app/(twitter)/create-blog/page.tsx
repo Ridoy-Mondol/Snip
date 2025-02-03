@@ -28,6 +28,8 @@ import ProgressCircle from "@/components/misc/ProgressCircle";
 import { AuthContext } from "@/context/AuthContext";
 import { Editor } from "@tinymce/tinymce-react";
 import { ThemeContext } from "@/app/providers";
+import { SnackbarProps } from "@/types/SnackbarProps";
+import CustomSnackbar from "@/components/misc/CustomSnackbar";
 
 export default function CreateBlogPage() {
   const [showPicker, setShowPicker] = useState(false);
@@ -37,8 +39,8 @@ export default function CreateBlogPage() {
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"publish" | "draft">("publish");
-  // const [isSchedule, setIsSchedule] = useState<"false" | "true">("false");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
   const { token, isPending } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
@@ -61,10 +63,19 @@ export default function CreateBlogPage() {
     mutationFn: draftBlog,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drafts"] });
-      alert("Saved successfully to draft");
+      setSnackbar({
+        message: "Blog saved successfully to draft.",
+        severity: "success",
+        open: true,
+    });
     },
     onError: (error) => {
       console.error(error);
+      setSnackbar({
+        message: "Failed to save draft.",
+        severity: "error",
+        open: true,
+      });
       setLoading(false);
     },
   });
@@ -413,6 +424,10 @@ export default function CreateBlogPage() {
 
           {/* Dropzone */}
           {showDropzone && <Uploader handlePhotoChange={handlePhotoChange} />}
+          
+          {/* snackbar */}
+          {snackbar.open && ( <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} /> )}
+
         </form>
       </div>
     </main>

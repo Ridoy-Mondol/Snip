@@ -33,6 +33,8 @@ import Uploader from "../misc/Uploader";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import { uploadFile } from "@/utilities/storage";
 import ProgressCircle from "../misc/ProgressCircle";
+import { SnackbarProps } from "@/types/SnackbarProps";
+import CustomSnackbar from "@/components/misc/CustomSnackbar";
 
 export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     const [showPicker, setShowPicker] = useState(false);
@@ -45,6 +47,7 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     const [pollLength, setPollLength] = useState({ days: 0, hours: 0, minutes: 0 });
     const [actionType, setActionType] = useState<"publish" | "draft">("publish");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
     const queryClient = useQueryClient();
 
@@ -88,11 +91,20 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["drafts"] });
           setIsModalOpen(false);
-          alert("Saved successfully to draft");
+          setSnackbar({
+            message: "Post saved successfully to draft.",
+            severity: "success",
+            open: true,
+        });
+        
         },
         onError: (error) => {
           console.error(error);
-          alert("Failed to save your draft. Please try again.");
+          setSnackbar({
+            message: "Failed to save draft.",
+            severity: "error",
+            open: true,
+        });
         },
       });
 
@@ -582,7 +594,9 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                 )}
                 {showDropzone && <Uploader handlePhotoChange={handlePhotoChange} />}
 
-                
+                {snackbar.open && (
+                <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
+                )}
 
             </form>
         </div>

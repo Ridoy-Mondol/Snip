@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useFormik } from "formik";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogTitle, TextField, InputAdornment } from "@mui/material";
+import { Dialog, DialogContent, DialogTitle, TextField, InputAdornment, Button } from "@mui/material";
 import * as yup from "yup";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
+import { AiFillAudio, AiOutlineStop } from "react-icons/ai";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
@@ -12,6 +13,7 @@ import CircularLoading from "../misc/CircularLoading";
 import { checkUserExists, createMessage } from "@/utilities/fetch";
 import { uploadFile } from "@/utilities/storage";
 import Uploader from "../misc/Uploader";
+import useSpeechToText from "@/hooks/useSpeechInput";
 
 export default function NewMessageDialog({ open, handleNewMessageClose, token, recipient = "" }: NewMessageDialogProps) {
     const [showPicker, setShowPicker] = useState(false);
@@ -19,6 +21,8 @@ export default function NewMessageDialog({ open, handleNewMessageClose, token, r
     const [photoFile, setPhotoFile] = useState<File | null>(null);
 
     const queryClient = useQueryClient();
+
+    const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
 
     const mutation = useMutation({
         mutationFn: createMessage,
@@ -74,6 +78,21 @@ export default function NewMessageDialog({ open, handleNewMessageClose, token, r
         },
     });
 
+    const handleStartListening = () => {
+        if (!isSupported) {
+          return (
+            alert("Your browser do not support speechRecognition")
+          )
+        }
+        startListening((newTranscript) => {
+          formik.setFieldValue("text", formik.values.text ? formik.values.text + " " + newTranscript : newTranscript);
+        });
+      };
+    
+      const handleStopListening = () => {
+          stopListening();
+      };
+
     return (
         <Dialog className="dialog" open={open} onClose={handleNewMessageClose} fullWidth maxWidth="xs">
             <DialogTitle className="title">New Message {recipient ? "to " + recipient.toLowerCase() : ""}</DialogTitle>
@@ -110,6 +129,23 @@ export default function NewMessageDialog({ open, handleNewMessageClose, token, r
                                 error={formik.touched.text && Boolean(formik.errors.text)}
                                 helperText={formik.touched.text && formik.errors.text}
                                 autoFocus={recipient ? true : false}
+                                InputProps={{
+                                    endAdornment: (listening ? (
+                                    <Button 
+                                    onClick={handleStopListening} 
+                                    color="secondary">
+                                    <AiOutlineStop size={20} />
+                                      </Button>
+                                    ) : (
+                                      <Button 
+                                      onClick={() => {
+                                        handleStartListening()
+                                      }}
+                                      color="primary">
+                                        <AiFillAudio size={20} />
+                                      </Button>
+                                    )),
+                                  }}
                             />
                         </div>
                         <div className="input-additions">

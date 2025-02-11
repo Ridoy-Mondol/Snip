@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFormik } from "formik";
-import { TextField } from "@mui/material";
+import { TextField, Button } from "@mui/material";
 import { FaPaperPlane, FaRegImage, FaRegSmile } from "react-icons/fa";
+import { AiFillAudio, AiOutlineStop } from "react-icons/ai";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import * as yup from "yup";
@@ -12,6 +13,7 @@ import Uploader from "../misc/Uploader";
 import { createMessage } from "@/utilities/fetch";
 import { uploadFile } from "@/utilities/storage";
 import { MessageFormProps } from "@/types/MessageProps";
+import useSpeechToText from "@/hooks/useSpeechInput";
 
 export default function NewMessageBox({ messagedUsername, token, setFreshMessages, freshMessages }: MessageFormProps) {
     const [showPicker, setShowPicker] = useState(false);
@@ -19,25 +21,10 @@ export default function NewMessageBox({ messagedUsername, token, setFreshMessage
     const [photoFile, setPhotoFile] = useState<File | null>(null);
 
     const queryClient = useQueryClient();
+    const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
 
     const mutation = useMutation({
         mutationFn: createMessage,
-        // onMutate: () => {
-        //     const newMessage = {
-        //         photoUrl: formik.values.photoUrl,
-        //         text: formik.values.text,
-        //         createdAt: new Date(Date.now()).toLocaleString(),
-        //         sender: {
-        //             username: formik.values.sender,
-        //         },
-        //         recipient: {
-        //             username: formik.values.recipient,
-        //         },
-        //         id: Math.floor(Math.random() * 1000000).toString(),
-        //     };
-        //     setFreshMessages([...freshMessages, newMessage]);
-        //     formik.resetForm();
-        // },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["messages", token.username] });
         },
@@ -76,6 +63,21 @@ export default function NewMessageBox({ messagedUsername, token, setFreshMessage
         },
     });
 
+    const handleStartListening = () => {
+        if (!isSupported) {
+          return (
+            alert("Your browser do not support speechRecognition")
+          )
+        }
+        startListening((newTranscript) => {
+          formik.setFieldValue("text", formik.values.text ? formik.values.text + " " + newTranscript : newTranscript);
+        });
+      };
+    
+      const handleStopListening = () => {
+          stopListening();
+      };
+
     return (
         <div className="new-message-box">
             <form className="new-message-form" onSubmit={formik.handleSubmit}>
@@ -89,6 +91,23 @@ export default function NewMessageBox({ messagedUsername, token, setFreshMessage
                         value={formik.values.text}
                         onChange={formik.handleChange}
                         error={formik.touched.text && Boolean(formik.errors.text)}
+                        InputProps={{
+                            endAdornment: (listening ? (
+                            <Button 
+                            onClick={handleStopListening} 
+                            color="secondary">
+                                <AiOutlineStop size={20} />
+                              </Button>
+                            ) : (
+                              <Button 
+                              onClick={() => {
+                                handleStartListening()
+                              }}
+                              color="primary">
+                                <AiFillAudio size={20} />
+                              </Button>
+                            )),
+                          }}
                     />
                 </div>
                 {formik.isSubmitting ? (

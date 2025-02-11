@@ -17,6 +17,7 @@ import { useFormik } from "formik";
 import * as yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
+import { AiFillAudio, AiOutlineStop } from "react-icons/ai";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
@@ -30,6 +31,7 @@ import { Editor } from "@tinymce/tinymce-react";
 import { ThemeContext } from "@/app/providers";
 import { SnackbarProps } from "@/types/SnackbarProps";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
+import useSpeechToText from "@/hooks/useSpeechInput";
 
 export default function CreateBlogPage() {
   const [showPicker, setShowPicker] = useState(false);
@@ -41,11 +43,14 @@ export default function CreateBlogPage() {
   const [actionType, setActionType] = useState<"publish" | "draft">("publish");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
+  const [listeningField, setListeningField] = useState<"title" | "content" | null>(null);
+
+
 
   const { token, isPending } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
-
   const queryClient = useQueryClient();
+  const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
 
   const mutation = useMutation({
     mutationFn: createBlog,
@@ -179,11 +184,30 @@ export default function CreateBlogPage() {
         setIsModalOpen(true); 
       } else {
         setActionType("draft");
-        // setIsSchedule("false");
         formik.handleSubmit();
       }
   }
 
+  const handleStartListening = (fieldName: "title" | "content") => {
+    if (!isSupported) {
+      return (
+        alert("Your browser do not support speechRecognition")
+      )
+    }
+    setListeningField(fieldName);
+    startListening((newTranscript) => {
+      if (fieldName === "title") {
+        formik.setFieldValue(fieldName, formik.values.title ? formik.values.title + " " + newTranscript : newTranscript);
+      } else if (fieldName === "content") {
+        formik.setFieldValue(fieldName, formik.values.content ? formik.values.content + " " + newTranscript : newTranscript);
+      }
+    });
+  };
+
+  const handleStopListening = () => {
+      stopListening();
+      setListeningField(null);
+  };
 
   const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -228,6 +252,18 @@ export default function CreateBlogPage() {
               onChange={formik.handleChange}
               error={formik.touched.title && Boolean(formik.errors.title)}
               helperText={formik.touched.title && formik.errors.title}
+              InputProps={{
+                endAdornment: (
+                  <Button
+                    onClick={() =>
+                      (listeningField === "title" && listening) ? handleStopListening() : handleStartListening("title")
+                    }
+                    color={(listeningField === "title" && listening) ? "secondary" : "primary"}
+                  >
+                    {(listeningField === "title" && listening) ? <AiOutlineStop size={20} /> : <AiFillAudio size={20} />}
+                  </Button>
+                ),
+              }}
             />
           </div>
 
@@ -311,6 +347,19 @@ export default function CreateBlogPage() {
             {formik.touched.content && formik.errors.content && (
               <div className="error">{formik.errors.content}</div>
             )}
+
+            <Button
+            onClick={() => {
+              if (listeningField === "content" && listening) {
+                handleStopListening();
+              } else {
+                handleStartListening("content");
+              }
+            }}
+            color={(listeningField === "content" && listening) ? "secondary" : "primary"}
+           >
+             {(listeningField === "content" && listening) ? <AiOutlineStop size={20} /> : <AiFillAudio size={20} />}
+            </Button>
           </div>
 
           {/* Input Additions */}
@@ -348,7 +397,6 @@ export default function CreateBlogPage() {
               type="submit"
               onClick={() => {
                 setActionType("publish");
-                // setIsSchedule("false");
                 formik.handleSubmit()
               }}
             >
@@ -397,7 +445,6 @@ export default function CreateBlogPage() {
             type="submit"
             onClick={() => {
               setActionType("draft");
-              // setIsSchedule("true");
               formik.handleSubmit();
             }}
           >

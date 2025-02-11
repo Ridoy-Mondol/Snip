@@ -4,6 +4,7 @@ import { useFormik } from "formik";
 import * as yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
+import { AiFillAudio, AiOutlineStop } from "react-icons/ai";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import Link from "next/link";
@@ -16,6 +17,7 @@ import { uploadFile } from "@/utilities/storage";
 import { UserProps } from "@/types/UserProps";
 import { TweetProps } from "@/types/TweetProps";
 import ProgressCircle from "../misc/ProgressCircle";
+import useSpeechToText from "@/hooks/useSpeechInput";
 
 export default function NewReply({ token, tweet }: { token: UserProps; tweet: TweetProps }) {
     const [showPicker, setShowPicker] = useState(false);
@@ -26,6 +28,8 @@ export default function NewReply({ token, tweet }: { token: UserProps; tweet: Tw
     const queryClient = useQueryClient();
 
     const queryKey = ["tweets", tweet.author.username, tweet.id];
+
+    const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
 
     const mutation = useMutation({
         mutationFn: (reply: string) => createReply(reply, tweet.author.username, tweet.id),
@@ -65,6 +69,21 @@ export default function NewReply({ token, tweet }: { token: UserProps; tweet: Tw
             setShowDropzone(false);
         },
     });
+
+    const handleStartListening = () => {
+        if (!isSupported) {
+          return (
+            alert("Your browser do not support speechRecognition")
+          )
+        }
+        startListening((newTranscript) => {
+          formik.setFieldValue("text", formik.values.text ? formik.values.text + " " + newTranscript : newTranscript);
+        });
+      };
+    
+      const handleStopListening = () => {
+          stopListening();
+      };
 
     const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setCount(e.target.value.length);
@@ -118,6 +137,21 @@ export default function NewReply({ token, tweet }: { token: UserProps; tweet: Tw
                     >
                         <FaRegSmile />
                     </button>
+
+                    <button
+                    type="button"
+                    onClick={() => {
+                    if (listening) {
+                         handleStopListening();
+                    } else {
+                        handleStartListening();
+                    }
+                    }}
+                    className="icon-hoverable"
+                    >
+                    {listening ? <AiOutlineStop size={20} /> : <AiFillAudio size={20} />}
+                    </button>
+
                     <ProgressCircle maxChars={280} count={count} />
                     <button className={`btn ${formik.isValid ? "" : "disabled"}`} disabled={!formik.isValid} type="submit">
                         Reply

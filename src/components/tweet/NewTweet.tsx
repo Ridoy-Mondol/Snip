@@ -22,7 +22,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
 import { BiBarChartAlt2 } from "react-icons/bi";
 import { AiOutlineCloseCircle } from 'react-icons/ai';
-import { AiOutlinePlusCircle, AiOutlineDelete } from "react-icons/ai";
+import { AiOutlinePlusCircle, AiOutlineDelete, AiFillAudio, AiOutlineStop } from "react-icons/ai";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
@@ -35,6 +35,7 @@ import { uploadFile } from "@/utilities/storage";
 import ProgressCircle from "../misc/ProgressCircle";
 import { SnackbarProps } from "@/types/SnackbarProps";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
+import useSpeechToText from "@/hooks/useSpeechInput";
 
 export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     const [showPicker, setShowPicker] = useState(false);
@@ -50,6 +51,8 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
     const queryClient = useQueryClient();
+
+    const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
 
       
         const handleAddOption = () => {
@@ -200,6 +203,21 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
            setIsModalOpen(true); 
         }
     }
+
+    const handleStartListening = () => {
+      if (!isSupported) {
+        return (
+          alert("Your browser do not support speechRecognition")
+        )
+      }
+      startListening((newTranscript) => {
+        formik.setFieldValue("text", formik.values.text ? formik.values.text + " " + newTranscript : newTranscript);
+      });
+    };
+  
+    const handleStopListening = () => {
+        stopListening();
+    };
 
     const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setCount(e.target.value.length);
@@ -506,6 +524,21 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                     >
                         <FaRegSmile />
                     </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                          if (listening) {
+                            handleStopListening();
+                          } else {
+                            handleStartListening();
+                          }
+                        }}
+                        className="icon-hoverable"
+                    >
+                        {listening ? <AiOutlineStop size={20} /> : <AiFillAudio size={20} />}
+                    </button>
+
 
                     <ProgressCircle maxChars={280} count={count} />
                     <button 

@@ -60,7 +60,9 @@
         "react-icons": "^4.8.0",
         "react-infinite-scroll-component": "^6.1.0",
         "react-onesignal": "^3.0.1",
+        "react-speech-recognition": "^3.10.0",
         "react-syntax-highlighter": "^15.6.1",
+        "speech-to-text": "^2.9.1",
         "ua-parser-js": "^2.0.0",
         "universal-cookie": "^4.0.4",
         "uuid": "^11.0.3",
@@ -68,6 +70,7 @@
     },
     "devDependencies": {
         "@types/node-cron": "^3.0.11",
+        "@types/react-speech-recognition": "^3.9.6",
         "@types/react-syntax-highlighter": "^15.5.13",
         "@types/useragent": "^2.3.4",
         "encoding": "^0.1.13",

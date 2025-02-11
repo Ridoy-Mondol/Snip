@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { RxDotsHorizontal } from "react-icons/rx";
 import { Avatar, Menu, MenuItem, TextField, Dialog,DialogActions, DialogTitle, DialogContent, FormControl, InputLabel, Select, Typography,  } from "@mui/material";
-import { AiFillTwitterCircle } from "react-icons/ai";
+import { AiFillTwitterCircle, AiFillAudio, AiOutlineStop } from "react-icons/ai";
 
 import { TweetProps } from "@/types/TweetProps";
 import { formatDateExtended } from "@/utilities/date";
@@ -33,6 +33,7 @@ import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { FaRegSmile } from "react-icons/fa";
 import { LinearProgress, Button } from "@mui/material";
+import useSpeechToText from "@/hooks/useSpeechInput";
 
 export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token: VerifiedToken }) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -53,6 +54,8 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
 
     const queryClient = useQueryClient();
     const router = useRouter();
+
+    const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
 
     const mutation = useMutation({
         mutationFn: (jsonId: string) => deleteTweet(tweet.id, tweet.authorId, jsonId),
@@ -83,6 +86,21 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
         },
         onError: (error) => console.error(error),
     });
+
+    const handleStartListening = () => {
+        if (!isSupported) {
+          return (
+            alert("Your browser do not support speechRecognition")
+          )
+        }
+        startListening((newTranscript) => {
+          formik.setFieldValue("text", formik.values.text ? formik.values.text + " " + newTranscript : newTranscript);
+        });
+      };
+    
+      const handleStopListening = () => {
+          stopListening();
+      };
 
     const handleAnchorClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(e.currentTarget);
@@ -509,6 +527,21 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                     >
                         <FaRegSmile />
                     </button>
+
+                    <button
+                     type="button"
+                     onClick={() => {
+                     if (listening) {
+                        handleStopListening();
+                     } else {
+                        handleStartListening();
+                     }
+                    }}
+                    className="icon-hoverable"
+                    >
+                    {listening ? <AiOutlineStop size={20} /> : <AiFillAudio size={20} />}
+                    </button>
+
                     <ProgressCircle maxChars={280} count={formik.values.text.length} />
                     <button
                         className={`btn ${formik.isValid ? "" : "disabled"}`}

@@ -17,6 +17,7 @@ import {
 import { useFormik } from "formik";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
+import { AiFillAudio, AiOutlineStop } from "react-icons/ai";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
@@ -28,6 +29,7 @@ import ProgressCircle from "@/components/misc/ProgressCircle";
 import { AuthContext } from "@/context/AuthContext";
 import { Editor } from "@tinymce/tinymce-react";
 import { ThemeContext } from "@/app/providers";
+import useSpeechToText from "@/hooks/useSpeechInput";
 
 export default function UpdateBlogPage({ params }: { params: { id: string } }) {
   const [showPicker, setShowPicker] = useState(false);
@@ -40,10 +42,13 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
   const [actionType, setActionType] = useState<"publish" | "update">("update");
   const [isSchedule, setIsSchedule] = useState<"false" | "true">("false");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [listeningField, setListeningField] = useState<"title" | "content" | null>(null);
 
   const { token, isPending } = useContext(AuthContext);
   const queryClient = useQueryClient();
   const { theme } = useContext(ThemeContext);
+
+  const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
 
   const { id: blogId } = params;
 
@@ -173,6 +178,27 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
      }
   }
 
+  const handleStartListening = (fieldName: "title" | "content") => {
+    if (!isSupported) {
+      return (
+        alert("Your browser do not support speechRecognition")
+      )
+    }
+    setListeningField(fieldName);
+    startListening((newTranscript) => {
+      if (fieldName === "title") {
+        formik.setFieldValue(fieldName, formik.values.title ? formik.values.title + " " + newTranscript : newTranscript);
+      } else if (fieldName === "content") {
+        formik.setFieldValue(fieldName, formik.values.content ? formik.values.content + " " + newTranscript : newTranscript);
+      }
+    });
+  };
+
+  const handleStopListening = () => {
+      stopListening();
+      setListeningField(null);
+  };
+
   // Handle text change
   const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -206,6 +232,18 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
               name="title"
               value={formik.values.title}
               onChange={customHandleChange}
+              InputProps={{
+                endAdornment: (
+                  <Button
+                    onClick={() =>
+                      (listeningField === "title" && listening) ? handleStopListening() : handleStartListening("title")
+                    }
+                    color={(listeningField === "title" && listening) ? "secondary" : "primary"}
+                  >
+                    {(listeningField === "title" && listening) ? <AiOutlineStop size={20} /> : <AiFillAudio size={20} />}
+                  </Button>
+                ),
+              }}
             />
           </div>
 
@@ -291,6 +329,20 @@ export default function UpdateBlogPage({ params }: { params: { id: string } }) {
               }}
               onEditorChange={handleEditorChange}
             />
+
+            <Button
+            onClick={() => {
+              if (listeningField === "content" && listening) {
+                handleStopListening();
+              } else {
+                handleStartListening("content");
+              }
+            }}
+            color={(listeningField === "content" && listening) ? "secondary" : "primary"}
+           >
+             {(listeningField === "content" && listening) ? <AiOutlineStop size={20} /> : <AiFillAudio size={20} />}
+            </Button>
+
           </div>
 
           <div className="input-additions">

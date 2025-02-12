@@ -1,5 +1,4 @@
 "use client";
-import { Popover } from "@mui/material";
 import { useEffect, useState, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { AuthContext } from "@/context/AuthContext";
@@ -16,12 +15,15 @@ import {
   Dialog,
   DialogActions,
   DialogTitle,
+  Popover,
+  Box
 } from "@mui/material";
-import { FiMoreVertical, FiFileText } from "react-icons/fi";
+import { FiMoreVertical, FiVolume2, FiVolumeX, FiPlay, FiPause } from "react-icons/fi";
 import { MdMenuBook } from "react-icons/md";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import CircularLoading from "@/components/misc/CircularLoading";
 import ProfileCard from "@/components/user/ProfileCard";
+import { speakText } from "@/utilities/textToSpeech";
 
 interface BlogPageParams {
   id: string;
@@ -35,6 +37,9 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
   const [relatedBlogs, setRelatedBlogs] = useState<any[]>([]); 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [hoveredProfile, setHoveredProfile] = useState("");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
   const router = useRouter();
   const { id } = params;
 
@@ -126,6 +131,12 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
     return `${minutes} min read`;
   };
 
+  const stripHtml = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent || "";
+  };
+  
+
   const handleUpdate = () => {
     router.push(`/blog/update/${id}`);
     setMenuOpen(false);
@@ -150,6 +161,38 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
   const handlePopoverClose = () => {
     setAnchorEl(null);
   };
+
+  const handleSpeech = (content: string) => {
+    if (isSpeaking) {
+      speechSynthesis.cancel(); 
+      setIsSpeaking(false);
+      setIsPaused(false);
+    } else {
+      speakText(content, setIsSpeaking, setIsPaused);
+      setIsSpeaking(true);
+    }
+  };
+
+  const pauseSpeech = () => {
+    if (speechSynthesis.speaking) {
+        speechSynthesis.pause();
+        setIsPaused(true);
+    } else {
+        setIsPaused(false);
+      }
+  };
+  
+  const resumeSpeech = () => {
+    speechSynthesis.resume();
+    setIsPaused(false);
+  };
+  
+  const stopSpeech = () => {
+    speechSynthesis.cancel();
+    setIsSpeaking(false);
+    setIsPaused(false);
+  };
+  
 
   if (loading) {
     return <CircularLoading />;
@@ -225,9 +268,6 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
             <span style={{ fontSize: "20px", fontWeight: "bold", margin: "0 8px" }}>·</span>
             <MdMenuBook size={16} style={{ marginRight: "0px" }} />
             <span>{calculateReadTime(blog.content)}</span>
-            {/* <span style={{ fontSize: "20px", fontWeight: "bold", margin: "0 8px" }}>·</span>
-            <FiFileText size={16} style={{ marginRight: "0px" }} />
-            <span>{1234} views</span> */}
           </Typography>
 
           {/* Author Section */}
@@ -272,14 +312,80 @@ export default function BlogPage({ params }: { params: BlogPageParams }) {
             dangerouslySetInnerHTML={{ __html: blog.content }}
           />
 
-          <Button
-            variant="outlined"
-            color="primary"
-            sx={{ marginTop: "20px" }}
-            href={`/blog`}
-          >
-            Back to Blogs
+          {/* Listen Button & Back to Blogs Button */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "20px" }}>          
+
+          {isSpeaking ? (
+            <>
+              <IconButton
+                color="error"
+                onClick={stopSpeech}
+                sx={{
+                  backgroundColor: "#d32f2f",
+                  color: "white",
+                  "&:hover": { backgroundColor: "#c62828" },
+                  width: 45,
+                  height: 45,
+                  borderRadius: "50%",
+                }}
+              >
+                <FiVolumeX size={22} />
+              </IconButton>
+
+              {isPaused ? (
+                <IconButton
+                  color="primary"
+                  onClick={resumeSpeech}
+                  sx={{
+                    backgroundColor: "#1976d2",
+                    color: "white",
+                    "&:hover": { backgroundColor: "#1565c0" },
+                    width: 45,
+                    height: 45,
+                    borderRadius: "50%",
+                  }}
+                >
+                  <FiPlay size={22} />
+                </IconButton>
+              ) : (
+                <IconButton
+                  color="secondary"
+                  onClick={pauseSpeech}
+                  sx={{
+                    backgroundColor: "#1976d2",
+                    color: "white",
+                    "&:hover": { backgroundColor: "#1565c0" },
+                    width: 45,
+                    height: 45,
+                    borderRadius: "50%",
+                  }}
+                >
+                  <FiPause size={22} />
+                </IconButton>
+              )}
+            </>
+          ) : (
+            <IconButton
+              color="primary"
+              onClick={() => handleSpeech(stripHtml(blog.content))}
+              sx={{
+                backgroundColor: "#1976d2",
+                color: "white",
+                "&:hover": { backgroundColor: "#1565c0" },
+                width: 45,
+                height: 45,
+                borderRadius: "50%",
+              }}
+            >
+              <FiVolume2 size={22} />
+            </IconButton>
+          )}
+
+          <Button variant="outlined" color="primary" href={`/blog`}>
+           Back to Blogs
           </Button>
+          </Box>
+
         </CardContent>
 
         {/* Related Blogs Section */}

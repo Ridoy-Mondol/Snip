@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { AiFillTwitterCircle } from "react-icons/ai";
+import { FiVolume2, FiVolumeX, FiPlay, FiPause } from "react-icons/fi";
 
 import { TweetProps } from "@/types/TweetProps";
 import { formatDate, formatDateExtended } from "@/utilities/date";
@@ -18,7 +19,8 @@ import { getFullURL } from "@/utilities/misc/getFullURL";
 import { AuthContext } from "@/context/AuthContext";
 import ProfileCard from "../user/ProfileCard";
 import CircularLoading from "../misc/CircularLoading";
-import { LinearProgress, Button } from "@mui/material";
+import { LinearProgress, Button, IconButton } from "@mui/material";
+import { speakText } from "@/utilities/textToSpeech";
 
 export default function Tweet({ tweet }: { tweet: TweetProps }) {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -29,6 +31,8 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
     
     const [updatedPollOptions, setUpdatedPollOptions] = useState(tweet.pollOptions);
     const [totalVotes, setTotalVotes] = useState(tweet.totalVotes);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const { token } = useContext(AuthContext);
@@ -172,6 +176,37 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         fetchVoteCounts();
         fetchUserVotedStatus();
     }, []);
+
+    const handleSpeech = (content: string) => {
+        if (isSpeaking) {
+          speechSynthesis.cancel(); 
+          setIsSpeaking(false);
+          setIsPaused(false);
+        } else {
+          speakText(content, setIsSpeaking, setIsPaused);
+          setIsSpeaking(true);
+        }
+      };
+      
+      const pauseSpeech = () => {
+        if (speechSynthesis.speaking) {
+            speechSynthesis.pause();
+            setIsPaused(true);
+        } else {
+            setIsPaused(false);
+          }
+      };
+      
+      const resumeSpeech = () => {
+            speechSynthesis.resume();
+            setIsPaused(false);
+      };
+      
+      const stopSpeech = () => {
+        speechSynthesis.cancel();
+        setIsSpeaking(false);
+        setIsPaused(false);
+      };
 
     if (loading) {
         return <CircularLoading />
@@ -359,11 +394,35 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
            )}
 
                 <div onClick={(e) => e.stopPropagation()} className="tweet-bottom">
-                    <Reply tweet={tweet} />
-                    <Retweet tweetId={tweet.id} tweetAuthor={tweet.author.username} />
-                    <Like tweetId={tweet.id} tweetAuthor={tweet.author.username} />
-                    <Share
-                        tweetUrl={`https://${window.location.hostname}/${tweet.author.username}/tweets/${tweet.id}`}
+                
+                {tweet.text && (
+                isSpeaking ? (
+                  <>
+                    <IconButton onClick={stopSpeech}>
+                    <FiVolumeX size={16} />
+                    </IconButton>
+
+                    {isPaused && isSpeaking ? (
+                      <IconButton onClick={resumeSpeech}>
+                        <FiPlay size={15} />
+                      </IconButton>
+                    ) : isSpeaking ? (
+                      <IconButton onClick={pauseSpeech}>
+                        <FiPause size={15} />
+                      </IconButton>
+                    ) : null}
+                  </>
+                ) : (
+                  <IconButton onClick={() => handleSpeech(tweet.text)}>
+                    <FiVolume2 size={16} />
+                  </IconButton>
+                ))}
+
+                <Reply tweet={tweet} />
+                <Retweet tweetId={tweet.id} tweetAuthor={tweet.author.username} />
+                <Like tweetId={tweet.id} tweetAuthor={tweet.author.username} />
+                <Share
+                    tweetUrl={`https://${window.location.hostname}/${tweet.author.username}/tweets/${tweet.id}`}
                     />
                 </div>
             </div>

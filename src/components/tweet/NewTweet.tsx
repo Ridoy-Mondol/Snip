@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "@mui/material/styles";
 import { 
     TextField,
     MenuItem,
@@ -14,17 +15,23 @@ import {
     Avatar,
     Box,
     IconButton, 
-    Grid
+    Grid,
+    InputAdornment,
+    List,
+    ListItem,
+    ListItemText,
+    Paper,
   } from "@mui/material";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
 import { BiBarChartAlt2 } from "react-icons/bi";
-import { AiOutlineCloseCircle } from 'react-icons/ai';
-import { AiOutlinePlusCircle, AiOutlineDelete, AiFillAudio, AiOutlineStop } from "react-icons/ai";
+import { AiOutlineCloseCircle, AiOutlinePlusCircle, AiOutlineDelete, AiFillAudio, AiOutlineStop } from "react-icons/ai";
+import { IoMdCloseCircle } from "react-icons/io";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
+import { useSpring, animated } from '@react-spring/web';
 
 import CircularLoading from "../misc/CircularLoading";
 import { createTweet, draftTweet } from "@/utilities/fetch";
@@ -37,7 +44,13 @@ import { SnackbarProps } from "@/types/SnackbarProps";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import useSpeechToText from "@/hooks/useSpeechInput";
 
+
 export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
+    const [detectedCoin, setDetectedCoin] = useState<string | null>(null);
+    const [coins, setCoins] = useState<string[]>([]);
+    const [filteredCoins, setFilteredCoins] = useState<{ name: string }[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [showPicker, setShowPicker] = useState(false);
     const [showDropzone, setShowDropzone] = useState(false);
     const [showPoll, setShowPoll] = useState(false);
@@ -52,7 +65,10 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
 
     const queryClient = useQueryClient();
 
-    const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
+    const { listening, startListening, stopListening, isSupported } = useSpeechToText();
+
+    const theme = useTheme();
+    const isDarkMode = theme.palette.mode === "dark";
 
       
         const handleAddOption = () => {
@@ -118,20 +134,20 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     const validationSchema = yup.object({
             text: yup
             .string()
-            .max(280, "Tweet text should be of maximum 280 characters length.")
+            .max(600, "Tweet text should be of maximum 280 characters length.")
             .nullable(),
             authorId: yup.string().required("Author ID is required"),
             photoUrl: yup.string().nullable(),
-    showPoll: yup.boolean().default(false),
-    poll: yup.object().shape({
-      question: yup.string(),
-      options: yup.array().of(yup.string()),
-      length: yup.object().shape({
-        days: yup.number().min(0).required(),
-        hours: yup.number().min(0).max(23).required(),
-        minutes: yup.number().min(0).max(59).required(),
-      }),
-    }).nullable(),
+            showPoll: yup.boolean().default(false),
+            poll: yup.object().shape({
+              question: yup.string(),
+              options: yup.array().of(yup.string()),
+              length: yup.object().shape({
+                days: yup.number().min(0).required(),
+                hours: yup.number().min(0).max(23).required(),
+                minutes: yup.number().min(0).max(59).required(),
+              }),
+            }).nullable(),
 
     });
 
@@ -163,7 +179,7 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                         length: pollLength,
                     }
                     : null,
-            };
+                  };
     
 
                   console.log("Poll Data Assigned:", {
@@ -177,13 +193,11 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                   payload.photoUrl = path;
               }
       
-              console.log("Final Payload:", payload);
               if (actionType === "publish") {
                 await mutation.mutateAsync(payload);
               } else if (actionType === "draft") {
                 await draftMutation.mutateAsync(payload);
               }
-              console.log("Poll Data Before Reset:", payload.poll);
               resetForm();
               setCount(0);
               setShowDropzone(false);
@@ -219,12 +233,138 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
         stopListening();
     };
 
-    const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setCount(e.target.value.length);
-        formik.handleChange(e);
+    useEffect(() => {
+      async function fetchCoins() {
+        const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=100&page=1`;
+        
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+          const coinNames = data.map((coin: { name: string }) => coin.name);
+          setCoins(coinNames);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      }
+    
+      fetchCoins();
+    }, []); 
+
+    const handleCoinSelect = (coin: any) => {
+      const newText = `@${coin}`;
+      formik.setFieldValue("text", newText);
+      setShowDropdown(false);
+      setDetectedCoin(coin); 
     };
 
-    if (formik.isSubmitting) {
+    const customHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const text = e.target.value;
+        setCount(text.length);
+        formik.handleChange(e);
+
+        // Check if the input consists of only '@' to show dropdown
+        if (text === "@") {
+          setFilteredCoins(coins.map((coin) => ({ name: coin })));
+          setShowDropdown(true);
+        } else {
+          setShowDropdown(false);
+        }
+
+        // Detect @coinname in the text
+        const match = text.match(/@(\w+)/);
+        setDetectedCoin(match ? match[1] : null);
+    };
+  
+    // React Spring animation for dropdown
+    const dropdownAnimation = useSpring({
+      opacity: showDropdown ? 1 : 0,
+      transform: showDropdown ? "translateY(0px)" : "translateY(-10px)",
+      config: { tension: 200, friction: 20 },
+    });
+
+  // Generate Post with Coin Data
+  const generatePost = async () => {
+    if (!detectedCoin) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`https://api.coingecko.com/api/v3/coins/${detectedCoin.toLowerCase()}`);
+
+      if (!response.ok) {
+        return setSnackbar({
+          message: `${detectedCoin} is not a valid coin`,
+          severity: "error",
+          open: true,
+       });
+      }
+
+      const data = await response.json();
+
+      const {
+        image,
+        name,
+        symbol,
+        market_data: {
+          current_price,
+          market_cap,
+          price_change_percentage_24h,
+          total_volume,
+        },
+      } = data;
+
+      // Construct the prompt for Gemini API
+      const prompt = `
+      Please analyze the following cryptocurrency data   and provide a short market overview:
+      - Coin Name: ${name}
+      - Symbol: ${symbol.toUpperCase()}
+      - Current Price: $${current_price.usd.  toLocaleString()}
+      - Market Cap: $${market_cap.usd.toLocaleString()}
+      - 24h Price Change: ${price_change_percentage_24h}%
+      - Total Volume: $${total_volume.usd.  toLocaleString()}
+    
+      Write a short, concise and informative market summary based on this data without the introduction, just the summary.
+    `;
+
+      const geminiResponse = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!geminiResponse.ok) {
+        return setSnackbar({
+          message: `AI is unable to process this request`,
+          severity: "error",
+          open: true,
+       });
+      }
+    
+      const geminiData = await geminiResponse.json();
+      const marketOverview = geminiData.text;
+    
+
+      // Auto-generate post
+      formik.setFieldValue(
+      "text",
+      `🚀 Market Update: ${name} (${symbol.toUpperCase()})\n📈 Price: $${current_price.usd.toLocaleString()}\n📊 Market Cap: $${market_cap.usd.toLocaleString()}\n💸 Total Volume: $${total_volume.usd.toLocaleString()}\n🔄 24h Change: ${price_change_percentage_24h}%\n\nMarket Overview:\n${marketOverview}\n\n#Crypto #${name}`
+      );
+      formik.setFieldValue("photoUrl", image.large);
+      setDetectedCoin(null);
+    } catch (error) {
+      console.error("Error fetching coin data:", error);
+    }
+    setLoading(false);
+  };
+
+  const removeCoinMention = () => {
+    setDetectedCoin(null);
+  };
+
+  if (formik.isSubmitting || loading) {
         return <CircularLoading />;
     }
 
@@ -491,9 +631,103 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                         value={formik.values.text}
                         onChange={customHandleChange}
                         error={formik.touched.text && Boolean(formik.errors.text)}
-                        helperText={formik.touched.text && formik.errors.text}
+                        helperText={formik.touched.text && formik.errors.text} 
+
+                       InputProps={{
+                        endAdornment: detectedCoin && (
+                          <InputAdornment position="end" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                backgroundColor: '#F1F5F9',
+                                padding: '6px 10px',
+                                borderRadius: '24px',
+                                boxShadow: '0px 2px 6px rgba(0,0,0,0.1)',
+                                transition: 'opacity 0.3s ease-in-out',
+                              }}
+                            >
+                              {/* Generate Post Button */}
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={generatePost}
+                                sx={{
+                                  borderRadius: '20px',
+                                  fontWeight: 'bold',
+                                  padding: '6px 16px',
+                                  textTransform: 'none',
+                                  fontSize: '0.85rem',
+                                }}
+                              >
+                                Generate Post
+                              </Button>
+                    
+                              {/* Clear (Cross) Button */}
+                              <IconButton onClick={removeCoinMention} sx={{ color: 'red' }}>
+                                <IoMdCloseCircle size={22} />
+                              </IconButton>
+                            </Box>
+                          </InputAdornment>
+                        ),
+                      }}
+
                     />
                 </div>
+                
+                {/* dropdown */}
+                {showDropdown && (
+                <animated.div
+                  style={{
+                    ...dropdownAnimation,
+                    position: "absolute",
+                    width: "100%",
+                    zIndex: 1000,
+                  }}
+                >
+                  <Paper
+                    sx={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      width: "100%",
+                      maxHeight: 200,
+                      overflowY: "auto",
+                      backgroundColor: isDarkMode ? "#1E1E1E" : "#fff",
+                      color: isDarkMode ? "#fff" : "#000",
+                      boxShadow: isDarkMode
+                        ? "0px 4px 10px rgba(255,255,255,0.1)"
+                        : "0px 4px 10px rgba(0,0,0,0.1)",
+                      borderRadius: "8px",
+                      zIndex: 1000,
+                      mt: 1,
+                    }}
+                  >
+                    { filteredCoins && (
+                      <List>
+                        {filteredCoins.map((coin) => (
+                          <ListItem
+                            key={coin.name}
+                            onClick={() => handleCoinSelect(coin.name)}
+                            sx={{
+                              "&:hover": {
+                                backgroundColor: isDarkMode ? "#333" : "#f0f0f0",
+                              },
+                              cursor: "pointer",
+                              padding: "8px 16px",
+                              color: isDarkMode ? "#fff" : "#000",
+                            }}
+                          >
+                            <ListItemText primary={coin.name} />
+                          </ListItem>
+                        ))}
+                      </List>
+                    )}
+                  </Paper>
+                </animated.div>
+              )}
+
                 <div className="input-additions">
                     <button
                         onClick={(e) => {
@@ -540,7 +774,7 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                     </button>
 
 
-                    <ProgressCircle maxChars={280} count={count} />
+                    <ProgressCircle maxChars={600} count={count} />
                     <button 
                     className={`btn ${(formik.values.text || photoFile) ? "" : "disabled"}`} 
                     disabled={(!formik.values.text && !photoFile)}

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Tweet" ALTER COLUMN "text" SET DATA TYPE VARCHAR(600);

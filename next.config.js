@@ -5,7 +5,7 @@ const nextConfig = {
         serverActions: true,
     },
     images: {
-        domains: ['edduuatujlvepjzkvtau.supabase.co'],
+        domains: ['edduuatujlvepjzkvtau.supabase.co', 'coin-images.coingecko.com'],
     },
     async headers() {
         return [

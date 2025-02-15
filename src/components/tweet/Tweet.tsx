@@ -1,4 +1,4 @@
-import { Avatar, Popover, Tooltip } from "@mui/material";
+import { Avatar, Popover, Tooltip, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useContext, useState, useEffect } from "react";
 import Link from "next/link";
@@ -366,7 +366,34 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                             </span>
                         </Link>
                     )}{" "}
-                    {tweet.text}
+
+                    {tweet.text &&
+                      (() => {
+                        const changeRegex = /🔄 24h Change: ([-+]?\d+(\.\d+)?)%/;
+                        const hashtagRegex = /#(\w+)/g;
+
+                        const changeMatch = tweet.text.match(changeRegex);
+                        const hashtagMatches = [...tweet.text.matchAll(hashtagRegex)];
+
+                        let updatedText = tweet.text;
+
+                        if (changeMatch) {
+                          const changeValue = parseFloat(changeMatch[1]);
+                          const changeColor = changeValue < 0 ? "red" : "green";
+
+                          updatedText = updatedText.replace(
+                           changeRegex,
+                           `🔄 24h Change: <span style="color:${changeColor}; font-weight: bold;">${changeMatch[1]}%</span>`
+                          );
+                        }
+
+                        updatedText = updatedText.replace(hashtagRegex,                     (match) => {
+                          return `<span style="color: blue; font-weight: bold;">${match}</span>`;
+                        });
+
+                        return <span dangerouslySetInnerHTML={{ __html: updatedText }} />;
+                      })()}
+
                 </div>
                 {tweet.photoUrl && (
                     <div onClick={handlePropagation}>

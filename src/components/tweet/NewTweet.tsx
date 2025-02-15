@@ -134,7 +134,7 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     const validationSchema = yup.object({
             text: yup
             .string()
-            .max(600, "Tweet text should be of maximum 280 characters length.")
+            .max(600, "Tweet text should be of maximum 600 characters length.")
             .nullable(),
             authorId: yup.string().required("Author ID is required"),
             photoUrl: yup.string().nullable(),
@@ -254,7 +254,7 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     }, []); 
 
     const handleCoinSelect = (coin: any) => {
-      const newText = `@${coin}`;
+      const newText = `/${coin}`;
       formik.setFieldValue("text", newText);
       setShowDropdown(false);
       setDetectedCoin(coin); 
@@ -265,16 +265,16 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
         setCount(text.length);
         formik.handleChange(e);
 
-        // Check if the input consists of only '@' to show dropdown
-        if (text === "@") {
+        // Check if the input consists of only '/' to show dropdown
+        if (text === "/") {
           setFilteredCoins(coins.map((coin) => ({ name: coin })));
           setShowDropdown(true);
         } else {
           setShowDropdown(false);
         }
 
-        // Detect @coinname in the text
-        const match = text.match(/@(\w+)/);
+        // Detect /coinname in the text
+        const match = text.match(/^\s*\/(\w+)$/);
         setDetectedCoin(match ? match[1] : null);
     };
   
@@ -293,11 +293,13 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
       const response = await fetch(`https://api.coingecko.com/api/v3/coins/${detectedCoin.toLowerCase()}`);
 
       if (!response.ok) {
-        return setSnackbar({
+        setLoading(false);
+        setSnackbar({
           message: `${detectedCoin} is not a valid coin`,
           severity: "error",
           open: true,
        });
+       return;
       }
 
       const data = await response.json();
@@ -324,7 +326,7 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
       - 24h Price Change: ${price_change_percentage_24h}%
       - Total Volume: $${total_volume.usd.  toLocaleString()}
     
-      Write a short, concise and informative market summary based on this data without the introduction, just the summary.
+      Write a short and informative market summary based on this data without the introduction, just the summary.
     `;
 
       const geminiResponse = await fetch('/api/gemini', {
@@ -336,11 +338,13 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
       });
 
       if (!geminiResponse.ok) {
-        return setSnackbar({
+        setLoading(false);
+        setSnackbar({
           message: `AI is unable to process this request`,
           severity: "error",
           open: true,
        });
+       return;
       }
     
       const geminiData = await geminiResponse.json();
@@ -607,8 +611,6 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     )
   }
   
-      
-    
 
     return (
         <div className="new-tweet-form">
@@ -633,45 +635,78 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                         error={formik.touched.text && Boolean(formik.errors.text)}
                         helperText={formik.touched.text && formik.errors.text} 
 
-                       InputProps={{
+                      InputProps={{
                         endAdornment: detectedCoin && (
                           <InputAdornment position="end" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Box
-                              sx={{
+                              sx={(theme) => ({
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 1,
-                                backgroundColor: '#F1F5F9',
-                                padding: '6px 10px',
+                                gap: 1.5,
+                                backgroundColor: theme.palette.mode === 'dark' ? '#1E293B' : '#F1F5F9',
+                                padding: '8px 12px',
                                 borderRadius: '24px',
-                                boxShadow: '0px 2px 6px rgba(0,0,0,0.1)',
-                                transition: 'opacity 0.3s ease-in-out',
-                              }}
+                                boxShadow: theme.palette.mode === 'dark'
+                                  ? '0px 3px 8px rgba(0,0,0,0.2)'
+                                  : '0px 2px 6px rgba(0,0,0,0.1)',
+                                border: `1px solid ${theme.palette.mode === 'dark' ? '#334155' : '#CBD5E1'}`,
+                                transition: 'all 0.3s ease-in-out',
+                              })}
                             >
                               {/* Generate Post Button */}
                               <Button
                                 variant="contained"
-                                color="primary"
                                 onClick={generatePost}
-                                sx={{
+                                sx={(theme) => ({
                                   borderRadius: '20px',
                                   fontWeight: 'bold',
-                                  padding: '6px 16px',
+                                  padding: '8px 18px',
                                   textTransform: 'none',
                                   fontSize: '0.85rem',
-                                }}
+                                  background: theme.palette.mode === 'dark'
+                                    ? 'linear-gradient(135deg, #1E88E5 30%, #42A5F5 90%)'
+                                    : 'linear-gradient(135deg, #0D47A1 30%, #1976D2 90%)',
+                                  color: '#fff',
+                                  boxShadow: theme.palette.mode === 'dark'
+                                    ? '0px 3px 10px rgba(66, 165, 245, 0.5)'
+                                    : '0px 3px 10px rgba(25, 118, 210, 0.4)',
+                                  transition: 'all 0.3s ease-in-out',
+                                  '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    background: theme.palette.mode === 'dark'
+                                      ? 'linear-gradient(135deg, #1565C0 30%, #1E88E5 90%)'
+                                      : 'linear-gradient(135deg, #0D47A1 30%, #1565C0 90%)',
+                                    boxShadow: '0px 5px 12px rgba(25, 118, 210, 0.6)',
+                                  },
+                                  '&:disabled': {
+                                    background: 'gray',
+                                    color: '#ccc',
+                                    cursor: 'not-allowed',
+                                  },
+                                })}
                               >
                                 Generate Post
                               </Button>
-                    
-                              {/* Clear (Cross) Button */}
-                              <IconButton onClick={removeCoinMention} sx={{ color: 'red' }}>
+                      
+                              {/* Clear (Close) Button */}
+                              <IconButton
+                                onClick={removeCoinMention}
+                                sx={(theme) => ({
+                                  color: theme.palette.mode === 'dark' ? '#F87171' : '#DC2626',
+                                  transition: 'transform 0.2s ease-in-out, color 0.2s ease-in-out',
+                                  '&:hover': {
+                                    transform: 'scale(1.2)',
+                                    color: theme.palette.mode === 'dark' ? '#EF4444' : '#B91C1C',
+                                  },
+                                })}
+                              >
                                 <IoMdCloseCircle size={22} />
                               </IconButton>
                             </Box>
                           </InputAdornment>
                         ),
                       }}
+                      
 
                     />
                 </div>

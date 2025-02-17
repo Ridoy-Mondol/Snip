@@ -21,14 +21,17 @@ import {
     ListItem,
     ListItemText,
     Paper,
+    Modal,
+    CircularProgress
   } from "@mui/material";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
 import { BiBarChartAlt2 } from "react-icons/bi";
-import { AiOutlineCloseCircle, AiOutlinePlusCircle, AiOutlineDelete, AiFillAudio, AiOutlineStop } from "react-icons/ai";
+import { AiOutlineCloseCircle, AiOutlinePlusCircle, AiOutlineDelete, AiFillAudio, AiOutlineStop, AiOutlineRobot } from "react-icons/ai";
 import { IoMdCloseCircle } from "react-icons/io";
+import { MdAutoAwesome, MdClose } from "react-icons/md";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { useSpring, animated } from '@react-spring/web';
@@ -53,6 +56,8 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
     const [loading, setLoading] = useState(false);
     const [showPicker, setShowPicker] = useState(false);
     const [showDropzone, setShowDropzone] = useState(false);
+    const [showPrompt, setShowPrompt] = useState(false);
+    const [prompt, setPrompt] = useState("");
     const [showPoll, setShowPoll] = useState(false);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [count, setCount] = useState(0);
@@ -366,6 +371,55 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
 
   const removeCoinMention = () => {
     setDetectedCoin(null);
+  };
+
+  const handleClose = () => {
+    setShowPrompt(false);
+  };
+
+  const handleGenerateContent = async () => {
+    if (!prompt) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/generate_post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!res.ok) {
+         setLoading(false);
+         setSnackbar({
+          message: `AI is unable to process this request`,
+          severity: "error",
+          open: true,
+         })
+         return
+      }
+      const data = await res.json();
+      const generatedPost = data.text?.trim();
+      
+      if (generatedPost == 'no') {
+        setLoading(false);
+        setSnackbar({
+          message: "This is not a valid prompt to generate post",
+          severity: 'error',
+          open: true,
+        })
+        return;
+      } else {
+        formik.setFieldValue(
+          'text', generatedPost,
+        )
+        setLoading(false);
+        setShowPrompt(false);
+        setPrompt("");
+        return;
+      } 
+      
+    } catch (error) {
+      console.error("Error generating content:", error);
+    }
+    setLoading(false);
   };
 
   if (formik.isSubmitting || loading) {
@@ -777,6 +831,16 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                     <button
                         onClick={(e) => {
                             e.preventDefault();
+                            setShowPrompt(!showPrompt);
+                        }}
+                        className="icon-hoverable"
+                    >
+                        <MdAutoAwesome />
+                    </button>
+
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault();
                             setShowPoll(!showPoll);
                         }}
                         className="icon-hoverable"
@@ -831,55 +895,180 @@ export default function NewTweet({ token, handleSubmit }: NewTweetProps) {
                     </button>
                 </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>
-          <Typography variant="h6" fontWeight="bold">
-            Schedule Post
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="textSecondary" mb={2}>
-            Choose when you&apos;d like the post to be published.
-          </Typography>
-          <FormControl fullWidth>
-            <InputLabel id="schedule-select-label">Publish Time</InputLabel>
-            <Select
-              labelId="schedule-select-label"
-              name="schedule"
-              value={formik.values.schedule}
-              onChange={formik.handleChange}
-            >
-              <MenuItem value="1h">1 Hour later</MenuItem>
-              <MenuItem value="2h">2 Hours later</MenuItem>
-              <MenuItem value="5h">5 Hours later</MenuItem>
-              <MenuItem value="10h">10 Hours later</MenuItem>
-              <MenuItem value="1D">1 Day later</MenuItem>
-              <MenuItem value="7D">7 Days later</MenuItem>
-              <MenuItem value="Never">Never</MenuItem>
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button color="inherit" variant="outlined" onClick={() => setIsModalOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            color="primary"
-            variant="contained"
-            disabled={!formik.values.schedule}
-            type="submit"
-            onClick={() => {
-              setActionType("draft");
-              formik.handleSubmit();
-            }}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-      )}
+                {/* Schedule Post Modal */}
+                {isModalOpen && (
+                  <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} fullWidth maxWidth="sm">
+                  <DialogTitle>
+                    <Typography variant="h6"   fontWeight="bold">
+                      Schedule Post
+                    </Typography>
+                  </DialogTitle>
+                  <DialogContent>
+                    <Typography variant="body2" color="textSecondary" mb={2}>
+                      Choose when you&apos;d like the post to be published.
+                    </Typography>
+                    <FormControl fullWidth>
+                      <InputLabel           id="schedule-select-label">Publish Time</InputLabel>
+                      <Select
+                        labelId="schedule-select-label"
+                        name="schedule"
+                        value={formik.values.schedule}
+                        onChange={formik.handleChange}
+                      >
+                        <MenuItem value="1h">1 Hour later</MenuItem>
+                        <MenuItem value="2h">2 Hours later</MenuItem>
+                        <MenuItem value="5h">5 Hours later</MenuItem>
+                        <MenuItem value="10h">10 Hours later</MenuItem>
+                        <MenuItem value="1D">1 Day later</MenuItem>
+                        <MenuItem value="7D">7 Days later</MenuItem>
+                        <MenuItem value="Never">Never</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button color="inherit" variant="outlined" onClick={() => setIsModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      color="primary"
+                      variant="contained"
+                      disabled={!formik.values.schedule}
+                      type="submit"
+                      onClick={() => {
+                        setActionType("draft");
+                        formik.handleSubmit();
+                      }}
+                    >
+                      Confirm
+                    </Button>
+                  </DialogActions>
+                </Dialog>
+                )}
+                
+                {/* Modal for AI Content Generation */}
+                <Modal open={showPrompt} onClose={handleClose}>
+                  <Box
+                    sx={{
+                      width: 450,
+                      borderRadius: 3,
+                      boxShadow: 24,
+                      p: 3,
+                      mx: "auto",
+                      mt: "15%",
+                      outline: "none",
+                      bgcolor: theme.palette.mode === "dark" ? "rgba(30, 30, 30, 0.9)" : "rgba(255, 255, 255, 0.9)",
+                      backdropFilter: "blur(10px)",
+                      border: `1px solid ${theme.palette.mode === "dark" ? "#444" : "#ddd"}`,
+                      transition: "all 0.3s ease-in-out",
+                    }}
+                  >
+                  {/* Modal Header */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 3,
+                      p: 2,
+                      borderRadius: 2,
+                      bgcolor: theme.palette.mode === "dark" ? "rgba(50, 50, 50, 0.6)" : "rgba(240, 240, 240, 0.6)",
+                      boxShadow: theme.palette.mode === "dark" ? "0 4px 8px rgba(0,0,0,0.2)" : "0 4px 8px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      fontWeight: 600,
+                      color: theme.palette.text.primary,
+                    }}
+                  >
+                    <AiOutlineRobot size={24} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+                      AI Post Generator
+                  </Typography>
+                  <IconButton onClick={handleClose} sx={{ color: theme.palette.text.primary }}>
+                    <MdClose size={24} />
+                    </IconButton>
+                  </Box>
+
+                  {/* Input Field */}
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    label="Enter a prompt for AI"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    sx={{
+                      mb: 3,
+                      bgcolor: theme.palette.mode === "dark" ? "#2c2c2c" : "white",
+                      borderRadius: 2,
+                      boxShadow: theme.palette.mode === "dark" ? "0 2px 5px rgba(255,255,255,0.1)" : "0 2px 5px rgba(0,0,0,0.1)",
+                      input: {
+                      color: theme.palette.text.primary,
+                    },
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          borderColor: theme.palette.mode === "dark" ? "#555" : "#ddd",
+                          },
+                          "&:hover fieldset": {
+                          borderColor: theme.palette.primary.main,
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: theme.palette.primary.main,
+                          },
+                        },
+                      }}
+                        multiline
+                        rows={3}
+                        placeholder="e.g., Write a creative post about AI..."
+                    />
+
+                    {/* Generate Button */}
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={handleGenerateContent}
+                      disabled={loading || !prompt}
+                      sx={{
+                        py: 1.5,
+                        borderRadius: 2,
+                        fontWeight: "bold",
+                        fontSize: "16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        background: theme.palette.mode === "dark"
+                        ? "linear-gradient(135deg, #2196F3 0%, #0D47A1 100%)"
+                        : "linear-gradient(135deg, #007BFF 0%, #0056B3 100%)",
+                        color: "white",
+                        boxShadow: theme.palette.mode === "dark"
+                        ? "0 4px 12px rgba(255,255,255,0.1)"
+                        : "0 4px 8px rgba(0,0,0,0.2)",
+                        "&:hover": {
+                          background: theme.palette.mode === "dark"
+                          ? "linear-gradient(135deg, #1976D2 0%, #0D47A1 100%)"
+                          : "linear-gradient(135deg, #0056B3 0%, #004085 100%)",
+                        },
+                        "&:disabled": {
+                          background: theme.palette.mode === "dark" ? "#555" : "#ccc",
+                            color: "#888",
+                            cursor: "not-allowed",
+                            },
+                        }}
+                        startIcon={
+                          loading ? (
+                           <CircularProgress size={20}         sx={{ color: "white" }} />
+                          ) : (
+                            <AiOutlineRobot style={{ color: "white" }} />
+                          )
+                        }
+                      >
+                        {loading ? "Generating..." : "Generate Post"}
+                      </Button>
+                   </Box>
+                </Modal>
 
                 {showPicker && (
                     <div className="emoji-picker">

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { 
   TextField,
   MenuItem,
@@ -11,13 +11,19 @@ import {
   FormControl,
   InputLabel,
   Select,
-  Typography, 
+  Typography,
+  Modal,
+  Box,
+  CircularProgress,
+  IconButton,
+
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FaRegImage, FaRegSmile } from "react-icons/fa";
-import { AiFillAudio, AiOutlineStop } from "react-icons/ai";
+import { AiFillAudio, AiOutlineStop, AiOutlineRobot } from "react-icons/ai";
+import { MdAutoAwesome, MdClose } from "react-icons/md";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
@@ -36,6 +42,8 @@ import useSpeechToText from "@/hooks/useSpeechInput";
 export default function CreateBlogPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [showDropzone, setShowDropzone] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [prompt, setPrompt] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -46,11 +54,10 @@ export default function CreateBlogPage() {
   const [listeningField, setListeningField] = useState<"title" | "content" | null>(null);
 
 
-
   const { token, isPending } = useContext(AuthContext);
   const { theme } = useContext(ThemeContext);
   const queryClient = useQueryClient();
-  const { transcript, listening, startListening, stopListening, isSupported } = useSpeechToText();
+  const { listening, startListening, stopListening, isSupported } = useSpeechToText();
 
   const mutation = useMutation({
     mutationFn: createBlog,
@@ -226,6 +233,59 @@ export default function CreateBlogPage() {
     formik.setFieldValue("content", content);
   };
 
+  useEffect(() => {
+    setPrompt(formik.values.title);
+  }, [formik.values.title]);
+  
+  const handleClose = () => {
+    setShowPrompt(false); 
+  };
+
+  const handleGenerateContent = async () => {
+    if (!prompt) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/generate_blog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!res.ok) {
+         setLoading(false);
+         setSnackbar({
+          message: `AI is unable to process this request`,
+          severity: "error",
+          open: true,
+         })
+         return
+      }
+      const data = await res.json();
+      const generatedBlog = data.text?.trim();
+      
+      if (generatedBlog == 'no') {
+        setLoading(false);
+        setSnackbar({
+          message: "This is not a valid prompt to generate blog",
+          severity: 'error',
+          open: true,
+        })
+        return;
+      } else {
+        formik.setFieldValue(
+          'content', generatedBlog,
+        )
+        setLoading(false);
+        setShowPrompt(false);
+        setPrompt("");
+        return;
+      } 
+      
+    } catch (error) {
+      console.error("Error generating content:", error);
+    }
+    setLoading(false);
+  };
+
   if (isPending || !token || loading) {
     return <CircularLoading />;
   }
@@ -373,6 +433,17 @@ export default function CreateBlogPage() {
             >
               <FaRegImage />
             </button>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                setShowPrompt(!showPrompt);
+              }}
+              className="icon-hoverable"
+            >
+              <MdAutoAwesome />
+            </button>
+
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -453,6 +524,132 @@ export default function CreateBlogPage() {
         </DialogActions>
       </Dialog>
       )}
+
+      {/* Modal for AI Content Generation */}
+      <Modal open={showPrompt} onClose={handleClose}>
+        <Box
+          sx={{
+            width: 450,
+            borderRadius: 3,
+            boxShadow: 24,
+            p: 3,
+            mx: "auto",
+            mt: "15%",
+            outline: "none",
+            bgcolor: theme === "dark" ? "rgba(30, 30, 30, 0.9)" : "rgba(255, 255, 255, 0.9)",
+            backdropFilter: "blur(10px)",
+            border: `1px solid ${theme === "dark" ? "#444" : "#ddd"}`,
+            transition: "all 0.3s ease-in-out",
+          }}
+        >
+        {/* Modal Header */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+            p: 2,
+            borderRadius: 2,
+            bgcolor: theme === "dark" ? "rgba(50, 50, 50, 0.6)" : "rgba(240, 240, 240, 0.6)",
+            boxShadow: theme === "dark" ? "0 4px 8px rgba(0,0,0,0.2)" : "0 4px 8px rgba(0,0,0,0.1)",
+          }}
+        >
+        <Typography
+          variant="h6"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            fontWeight: 600,
+            color: theme === "dark" ? "#fff" : "#000",
+          }}
+        >
+          <AiOutlineRobot size={24} style={{ marginRight: "8px", color: theme === "dark" ? "#4FC3F7" : "#007BFF" }} />
+            AI Blog Generator
+        </Typography>
+        <IconButton onClick={handleClose}
+        sx={{ color: theme === "dark" ? "#ddd" : "#333" }}>
+          <MdClose size={24} />
+          </IconButton>
+        </Box>
+
+        {/* Input Field */}
+        <TextField
+          fullWidth
+          variant="outlined"
+          label="Enter a prompt for AI"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          sx={{
+            mb: 3,
+            bgcolor: theme === "dark" ? "#2c2c2c" : "white",
+            borderRadius: 2,
+            boxShadow: theme === "dark" ? "0 2px 5px rgba(255,255,255,0.1)" : "0 2px 5px rgba(0,0,0,0.1)",
+            input: {
+              color: theme === "dark" ? "#fff" : "#000",
+          },
+            "& .MuiOutlinedInput-root": {
+              "& fieldset": {
+                borderColor: theme === "dark" ? "#555" : "#ddd",
+                },
+                "&:hover fieldset": {
+                  borderColor: theme === "dark" ? "#555" : "#ddd",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: theme === "dark" ? "#4FC3F7" : "#007BFF",
+                },
+              },
+            }}
+              multiline
+              rows={3}
+              placeholder="e.g., Write a creative blog about AI..."
+          />
+
+          {/* Generate Button */}
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleGenerateContent}
+            disabled={loading || !prompt}
+            sx={{
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: "bold",
+              fontSize: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              background: theme === "dark"
+                  ? "linear-gradient(135deg, #2196F3 0%, #0D47A1 100%)"
+                  : "linear-gradient(135deg, #007BFF 0%, #0056B3 100%)",
+              color: "white",
+              boxShadow: theme === "dark"
+                  ? "0 4px 12px rgba(255,255,255,0.1)"
+                  : "0 4px 8px rgba(0,0,0,0.2)",
+              "&:hover": {
+                background: theme === "dark"
+                    ? "linear-gradient(135deg, #1976D2 0%, #0D47A1 100%)"
+                    : "linear-gradient(135deg, #0056B3 0%, #004085 100%)",
+              },
+              "&:disabled": {
+                background: theme === "dark" ? "#555" : "#ccc",
+                  color: "#888",
+                  cursor: "not-allowed",
+                  },
+              }}
+              startIcon={
+                loading ? (
+                  <CircularProgress size={20}        sx={{ color: "white" }} />
+                ) : (
+                  <AiOutlineRobot style={{ color: "white" }} />
+                )
+              }
+            >
+              {loading ? "Generating..." : "Generate Blog"}
+            </Button>
+          </Box>
+      </Modal>
 
           {/* Emoji Picker */}
           {showPicker && (

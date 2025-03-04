@@ -27,8 +27,8 @@
     "dependencies": {
         "@emoji-mart/data": "^1.1.2",
         "@emoji-mart/react": "^1.1.1",
-        "@emotion/react": "^11.11.0",
-        "@emotion/styled": "^11.11.0",
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.0",
         "@google/generative-ai": "^0.21.0",
         "@mui/material": "^5.13.1",
         "@prisma/client": "^4.14.1",
@@ -53,7 +53,6 @@
         "jose": "^4.14.4",
         "lightweight-charts": "^4.2.2",
         "next": "^13.4.2",
-        "node-cron": "^3.0.3",
         "prisma": "^4.14.1",
         "react": "18.2.0",
         "react-chartjs-2": "^5.2.0",
@@ -71,7 +70,6 @@
         "yup": "^1.1.1"
     },
     "devDependencies": {
-        "@types/node-cron": "^3.0.11",
         "@types/react-speech-recognition": "^3.9.6",
         "@types/react-syntax-highlighter": "^15.5.13",
         "@types/useragent": "^2.3.4",

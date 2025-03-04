@@ -4,8 +4,9 @@ generator client {
 
 datasource db {
     provider          = "postgresql"
-    url               = env("DATABASE_URL")
-    directUrl         = env("DIRECT_URL")
+    url               = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    directUrl         = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
+    shadowDatabaseUrl = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?schema=prisma_shadow"
 }
 
 model User {
@@ -36,12 +37,28 @@ model User {
     sentMessages     Message[]      @relation("userMessagesSent")
     receivedMessages Message[]      @relation("userMessagesRecieved")
     notifications    Notification[]
+    assets           Asset[]        @relation("userAssets")
     blogs            Blog[]         @relation("userBlogs")
     votes     Vote[]    @relation("userVotes")
     sessions         Session[]      @relation("userSessions")
     playerIds String[] @default([])
     subscriptions    Subscription[] @relation("userSubscriptions")
     subscribers      Subscription[] @relation("userSubscribers")
+}
+
+model Asset {
+  id          String   @id @default(uuid())
+  name        String
+  amount      Decimal
+  buyPrice    Decimal
+  date        DateTime @default(now())
+  fee         Decimal?
+  notes       String?
+
+  author      User     @relation("userAssets", fields: [authorId], references: [id])
+  authorId    String
+
+  @@unique([authorId, name])
 }
 
 model Blog {

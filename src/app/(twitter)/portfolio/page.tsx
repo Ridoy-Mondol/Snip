@@ -524,7 +524,8 @@ const Portfolio = () => {
           px: 4, 
           py: 1.2, 
           fontSize: "1rem", 
-          borderRadius: 2, 
+          borderRadius: 2,
+          color: "#FFFFFF",
           background: "linear-gradient(135deg, #3f51b5 0%, #1e88e5 100%)"
         }}
         onClick={() => setShowAssetForm(true)}

@@ -31,9 +31,10 @@ interface PropsTypes {
     selectedAsset: Asset | null,
     userId: string | undefined,
     onLoadingChange: (value: boolean) => void,
+    isDarkMode: boolean,
   }
 
-const PortfolioAction = ({ showActionModal, setShowActionModal, selectedAsset, userId, onLoadingChange }: PropsTypes) => {
+const PortfolioAction = ({ showActionModal, setShowActionModal, selectedAsset, userId, onLoadingChange, isDarkMode }: PropsTypes) => {
   const [updateModal, setUpdateModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [coin, setCoin] = useState("");
@@ -184,35 +185,44 @@ const PortfolioAction = ({ showActionModal, setShowActionModal, selectedAsset, u
           boxShadow: 10,
           padding: 2,
           minWidth: 260,
-          background: "linear-gradient(135deg, #121212, #232323)",
-          color: "#fff",
+          background: isDarkMode 
+        ? "linear-gradient(135deg, #121212, #232323)" 
+        : "linear-gradient(135deg, #ffffff, #f8f8f8)",
+          color: isDarkMode ? "#fff" : "#000",
         },
       }}
     >
       <Box 
-      sx={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 1, 
-      }}>
-        
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 1, 
+        }}
+      >
+    
         {/* Update Button */}
         <Button
-          startIcon={<FiEdit size={18} />}
+          startIcon={<FiEdit size={18} color={isDarkMode ? "#E0E0E0" : "#333"} />}
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-start",
             textTransform: "none",
             fontSize: "16px",
-            color: "#E0E0E0",
+            color: isDarkMode ? "#E0E0E0" : "#333",
             width: "100%",
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            backgroundColor: isDarkMode 
+          ? "rgba(255, 255, 255, 0.05)" 
+          : "rgba(0, 0, 0, 0.05)",
             padding: "12px 16px",
             "& .MuiButton-startIcon": { marginRight: 3 },
-            "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+            "&:hover": { 
+              backgroundColor: isDarkMode 
+            ? "rgba(255, 255, 255, 0.1)" 
+            : "rgba(0, 0, 0, 0.1)" 
+            },
           }}
           onClick={handleUpdate}
         >
@@ -221,19 +231,25 @@ const PortfolioAction = ({ showActionModal, setShowActionModal, selectedAsset, u
 
         {/* Delete Button */}
         <Button
-          startIcon={<FiTrash2 size={18} />}
+          startIcon={<FiTrash2 size={18} color={isDarkMode ? "#FF5C5C" : "#D32F2F"} />}
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-start",
             textTransform: "none",
             fontSize: "16px",
-            color: "#FF5C5C",
+            color: isDarkMode ? "#FF5C5C" : "#D32F2F",
             width: "100%",
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            backgroundColor: isDarkMode 
+          ? "rgba(255, 255, 255, 0.05)" 
+          : "rgba(0, 0, 0, 0.05)",
             padding: "12px 16px",
             "& .MuiButton-startIcon": { marginRight: 3 }, 
-            "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+            "&:hover": { 
+              backgroundColor: isDarkMode 
+            ? "rgba(255, 255, 255, 0.1)" 
+            : "rgba(0, 0, 0, 0.1)" 
+            },
           }}
           onClick={() => {
             setDeleteModal(true);
@@ -246,155 +262,191 @@ const PortfolioAction = ({ showActionModal, setShowActionModal, selectedAsset, u
       </Box>
     </Dialog>
 
-        
-        {/* update modal */}
-        <Modal
-        open={updateModal}
-        onClose={() => setUpdateModal(false)}
-        aria-labelledby="add-asset-modal"
-        aria-describedby="modal-to-add-crypto-asset"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            padding: 3,
-            bgcolor: "#121212",
-            borderRadius: 2,
-            boxShadow: 24,
-          }}
-        >
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h5" fontWeight="bold">Update Asset</Typography>
-          <RiCloseLine
-            size={24}
-            color="white"
-            style={{ cursor: "pointer" }}
-            onClick={() => setUpdateModal(false)} 
-           />
-        </Box>
-        <Box sx={{ position: "relative" }}>
-          <TextField
-            label="Asset Name"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            value={coin}
-            required
-            autoComplete="off"
-          />
-          </Box>
-          
-          <Box display="flex" justifyContent="space-between" alignItems="center" gap={2}>
-          <TextField
-            label="Quantity"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            required
-            value={quantity}
-            onChange={(e) => {
-            const value = e.target.value;
-            if (/^\d*\.?\d*$/.test(value)) {
-               setQuantity(value); 
-            }
-            }}
-            autoComplete="off"
-            inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
-          />
-          <TextField
-            label="Price Per Coin"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            required
-            value={pricePerCoin}
-            onChange={(e) => {
-            const value = e.target.value;
-              if (/^\d*\.?\d*$/.test(value)) {
-                 setPricePerCoin(value); 
-              }
-            }}
-            autoComplete="off"
-            inputProps={{ 
-              inputMode: "decimal", pattern: "[0-9]*"
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <AiOutlineDollar size={20} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          </Box>
-          <TextField
-            label="Total spent"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            value={totalSpent}
-            autoComplete="off"
-            inputProps={{ 
-              inputMode: "decimal", pattern: "[0-9]*"
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <AiOutlineDollar size={20} />
-                </InputAdornment>
-              ),
-            }}
-          />
+    {/* Update Asset Modal */}
+    <Modal
+           open={updateModal}
+           onClose={() => setUpdateModal(false)}
+           aria-labelledby="update-asset-modal"
+           aria-describedby="modal-to-update-crypto-asset"
+       >
+           <Box
+           sx={{
+               position: "absolute",
+               top: "50%",
+               left: "50%",
+               transform: "translate(-50%, -50%)",
+               width: 400,
+               padding: 3,
+               bgcolor: isDarkMode ? "#121212" : "#fff",
+               borderRadius: 2,
+               boxShadow: 24,
+               color: isDarkMode ? "#fff" : "#000",
+           }}
+           >
+           {/* Header */}
+           <Box display="flex"           justifyContent="space-between"           alignItems="center" mb={2}>
+               <Typography variant="h5"           fontWeight="bold">Update Asset</Typography>
+               <RiCloseLine
+               size={24}
+               color={isDarkMode ? "#fff" : "#000"}
+               style={{ cursor: "pointer" }}
+               onClick={() => setUpdateModal(false)}
+               />
+           </Box>
 
-          <TextField
-            label="Fees"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            value={fees}
-            onChange={(e) => {
-            const value = e.target.value;
-              if (/^\d*\.?\d*$/.test(value)) {
-                setFees(value); 
-              }
-            }}
-            autoComplete="off"
-            inputProps={{ 
-              inputMode: "decimal", pattern: "[0-9]*"
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <AiOutlineDollar size={20} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <TextField
-            label="Notes"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            autoComplete="off"
-            multiline
-            rows={4}
-          />
-          <Button
-            variant="contained"
-            sx={{ mt: 2, width: "100%" }}
-            disabled={!coin && !quantity && !pricePerCoin && !fees && !notes}
-            onClick={handleSubmit}
-          >
-            Update Asset
-          </Button>
-        </Box>
-      </Modal>
+           {/* Asset Name */}
+           <TextField
+               label="Asset Name"
+               fullWidth
+               variant="outlined"
+               margin="normal"
+               value={coin}
+               required
+               autoComplete="off"
+               disabled
+               sx={{
+               bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+               color: isDarkMode ? "#fff" : "#000",
+               }}
+           />
+
+           {/* Quantity & Price Per Coin */}
+           <Box display="flex"           justifyContent="space-between"           alignItems="center" gap={2}>
+               <TextField
+               label="Quantity"
+               fullWidth
+               variant="outlined"
+               margin="normal"
+               required
+               value={quantity}
+               onChange={(e) => {
+                   const value = e.target.value;
+                   if (/^\d*\.?\d*$/.test(value)) {
+                   setQuantity(value);
+                   }
+               }}
+               autoComplete="off"
+               inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
+               sx={{
+                   bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+                   color: isDarkMode ? "#fff" : "#000",
+               }}
+               />
+               <TextField
+               label="Price Per Coin"
+               fullWidth
+               variant="outlined"
+               margin="normal"
+               required
+               value={pricePerCoin}
+               onChange={(e) => {
+                   const value = e.target.value;
+                   if (/^\d*\.?\d*$/.test(value)) {
+                   setPricePerCoin(value);
+                   }
+               }}
+               autoComplete="off"
+               inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
+               sx={{
+                   bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+                   color: isDarkMode ? "#fff" : "#000",
+               }}
+               InputProps={{
+                   endAdornment: (
+                   <InputAdornment position="end">
+                       <AiOutlineDollar size={20} color={isDarkMode ? "#fff" : "#000"} />
+                   </InputAdornment>
+                   ),
+               }}
+               />
+           </Box>
+
+           {/* Total Spent */}
+           <TextField
+               label="Total spent"
+               fullWidth
+               variant="outlined"
+               margin="normal"
+               value={totalSpent}
+               autoComplete="off"
+               inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
+               sx={{
+               bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+               color: isDarkMode ? "#fff" : "#000",
+               }}
+               InputProps={{
+               endAdornment: (
+                   <InputAdornment position="end">
+                   <AiOutlineDollar size={20} color={isDarkMode ? "#fff" : "#000"} />
+                   </InputAdornment>
+               ),
+               }}
+           />
+
+           {/* Fees */}
+           <TextField
+               label="Fees"
+               fullWidth
+               variant="outlined"
+               margin="normal"
+               value={fees}
+               onChange={(e) => {
+               const value = e.target.value;
+               if (/^\d*\.?\d*$/.test(value)) {
+                   setFees(value);
+               }
+               }}
+               autoComplete="off"
+               inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
+               sx={{
+               bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+               color: isDarkMode ? "#fff" : "#000",
+               }}
+               InputProps={{
+               endAdornment: (
+                   <InputAdornment position="end">
+                   <AiOutlineDollar size={20} color={isDarkMode ? "#fff" : "#000"} />
+                   </InputAdornment>
+               ),
+               }}
+           />
+
+           {/* Notes */}
+           <TextField
+               label="Notes"
+               fullWidth
+               variant="outlined"
+               margin="normal"
+               value={notes}
+               onChange={(e) => setNotes(e.target.value)}
+               autoComplete="off"
+               multiline
+               rows={4}
+               sx={{
+               bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+               color: isDarkMode ? "#fff" : "#000",
+               }}
+           />
+
+           {/* Submit Button */}
+           <Button
+               variant="contained"
+               sx={{
+               mt: 2,
+               width: "100%",
+               bgcolor: isDarkMode ? "#1976d2" : "#1565c0",
+               color: "#fff",
+               "&:hover": {
+                   bgcolor: isDarkMode ? "#1565c0" : "#0d47a1",
+               },
+               }}
+               disabled={!coin && !quantity && !pricePerCoin && !fees && !notes}
+               onClick={handleSubmit}
+           >
+               Update Asset
+           </Button>
+           </Box>
+       </Modal>
       
       {/* delete modal */}
       <Modal open={deleteModal} onClose={() => setDeleteModal(false)}>

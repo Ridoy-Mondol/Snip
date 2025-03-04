@@ -693,251 +693,291 @@ const Portfolio = () => {
      </Box>
    )}
 
-
    {/* Modal for Adding Asset */}
    <Modal
-        open={showAssetForm}
-        onClose={() => setShowAssetForm(false)}
-        aria-labelledby="add-asset-modal"
-        aria-describedby="modal-to-add-crypto-asset"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            padding: 3,
-            bgcolor: "#121212",
-            borderRadius: 2,
-            boxShadow: 24,
-          }}
-        >
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h5" fontWeight="bold">Add New Asset</Typography>
-          <RiCloseLine
-            size={24}
-            color="white"
-            style={{ cursor: "pointer" }}
-            onClick={() => setShowAssetForm(false)} 
-           />
-        </Box>
-        <Box sx={{ position: "relative" }}>
-          <TextField
-            label="Asset Name"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            value={coin}
-            required
-            onFocus={() => {
-              setShowDropdown(true);
-              setIsFocused(true);
-            }}
-            onBlur={handleBlur}
-            onChange={(e) => setCoin(e.target.value)}
-            autoComplete="off"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    sx={{
-                      transition: "transform 0.3s",
-                      transform: isFocused ? "rotate(180deg)" : "rotate(0deg)",
-                    }}
-                  >
-                    <BsChevronDown size={18} />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          {/* Dropdown  */}
-          {showDropdown && (
-            <animated.div
-              style={{
-                ...dropdownAnimation,
-                position: "absolute",
-                top: "100%",
-                left: 0,
-                width: "100%",
-                zIndex: 1000,
-              }}
-              ref={dropdownRef}
-            >
-              <Paper
-                sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  maxHeight: 200,
-                  overflowY: "auto",
-                  backgroundColor: isDarkMode ? "#1E1E1E" : "#fff",
-                  color: isDarkMode ? "#fff" : "#000",
-                  boxShadow: isDarkMode
+     open={showAssetForm}
+     onClose={() => setShowAssetForm(false)}
+     aria-labelledby="add-asset-modal"
+     aria-describedby="modal-to-add-crypto-asset"
+   >
+     <Box
+       sx={{
+         position: "absolute",
+         top: "50%",
+         left: "50%",
+         transform: "translate(-50%, -50%)",
+         width: 400,
+         padding: 3,
+         bgcolor: isDarkMode ? "#121212" : "#fff",
+         borderRadius: 2,
+         boxShadow: 24,
+         color: isDarkMode ? "#fff" : "#000",
+       }}
+     >
+       {/* Header */}
+       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+         <Typography variant="h5" fontWeight="bold">Add New Asset</Typography>
+         <RiCloseLine
+           size={24}
+           color={isDarkMode ? "white" : "black"}
+           style={{ cursor: "pointer" }}
+           onClick={() => setShowAssetForm(false)}
+         />
+       </Box>
+
+       {/* Input Fields */}
+       <Box sx={{ position: "relative" }}>
+         <TextField
+           label="Asset Name"
+           fullWidth
+           variant="outlined"
+           margin="normal"
+           value={coin}
+           required
+           onFocus={() => {
+             setShowDropdown(true);
+             setIsFocused(true);
+           }}
+           onBlur={handleBlur}
+           onChange={(e) => setCoin(e.target.value)}
+           autoComplete="off"
+           InputProps={{
+             sx: {
+               bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+               color: isDarkMode ? "#fff" : "#000",
+             },
+             endAdornment: (
+               <InputAdornment position="end">
+                 <IconButton
+                   sx={{
+                     transition: "transform 0.3s",
+                     transform: isFocused ? "rotate(180deg)" : "rotate(0deg)",
+                     color: isDarkMode ? "#fff" : "#000",
+                   }}
+                 >
+                   <BsChevronDown size={18} />
+                 </IconButton>
+               </InputAdornment>
+             ),
+           }}
+         />
+
+         {/* Dropdown */}
+         {showDropdown && (
+           <animated.div
+             style={{
+               ...dropdownAnimation,
+               position: "absolute",
+               top: "100%",
+               left: 0,
+               width: "100%",
+               zIndex: 1000,
+             }}
+             ref={dropdownRef}
+           >
+             <Paper
+               sx={{
+                 position: "absolute",
+                 top: 0,
+                 left: 0,
+                 width: "100%",
+                 maxHeight: 200,
+                 overflowY: "auto",
+                 backgroundColor: isDarkMode ? "#1E1E1E" : "#fff",
+                 color: isDarkMode ? "#fff" : "#000",
+                 boxShadow: isDarkMode
                 ? "0px 4px 10px rgba(255,255,255,0.1)"
                 : "0px 4px 10px rgba(0,0,0,0.1)",
-                  borderRadius: "8px",
-                  zIndex: 1000,
-                  mt: 1,
-                }}
-              >
-                {filteredAssets.length === 0 ? (
-                   <ListItem>
-                     <ListItemText primary="No Data" />
-                   </ListItem>
-                 ) : (
-                  <List>
-                    {filteredAssets.map((coin) => (
-                      <ListItem
-                        key={coin.name}
-                        onMouseDown={() => handleSelectCoin(coin.name, coin.currentPrice)}
-                        sx={{
-                          "&:hover": {
-                            backgroundColor: isDarkMode ? "#333" : "#f0f0f0",
-                          },
-                          cursor: "pointer",
-                          padding: "8px 16px",
-                          color: isDarkMode ? "#fff" : "#000",
-                        }}
-                      >
-                        <ListItemText primary={`${coin.name} (${coin.symbol})`} />
-                      </ListItem>
-                    ))}
-                  </List>
-                )}
-              </Paper>
-            </animated.div>
-          )}
-          </Box>
-          
-          <Box display="flex" justifyContent="space-between" alignItems="center" gap={2}>
-          <TextField
-            label="Quantity"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            required
-            value={quantity}
-            onChange={(e) => {
-            const value = e.target.value;
-            if (/^\d*\.?\d*$/.test(value)) {
-               setQuantity(value); 
-            }
-            }}
-            autoComplete="off"
-            inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
-          />
-          <TextField
-            label="Price Per Coin"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            required
-            value={pricePerCoin}
-            onChange={(e) => {
-            const value = e.target.value;
-              if (/^\d*\.?\d*$/.test(value)) {
-                 setPricePerCoin(value); 
-              }
-            }}
-            autoComplete="off"
-            inputProps={{ 
-              inputMode: "decimal", pattern: "[0-9]*"
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <AiOutlineDollar size={20} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          </Box>
-          <TextField
-            label="Total spent"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            value={totalSpent}
-            autoComplete="off"
-            inputProps={{ 
-              inputMode: "decimal", pattern: "[0-9]*"
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <AiOutlineDollar size={20} />
-                </InputAdornment>
-              ),
-            }}
-          />
+                 borderRadius: "8px",
+                 zIndex: 1000,
+                 mt: 1,
+               }}
+             >
+               {filteredAssets.length === 0 ? (
+                 <ListItem>
+                   <ListItemText primary="No Data" sx={{ color: isDarkMode ? "#fff" : "#000" }} />
+                 </ListItem>
+               ) : (
+                 <List>
+                   {filteredAssets.map((coin) => (
+                     <ListItem
+                       key={coin.name}
+                       onMouseDown={() => handleSelectCoin(coin.name, coin.currentPrice)}
+                       sx={{
+                         "&:hover": {
+                           backgroundColor: isDarkMode ? "#333" : "#f0f0f0",
+                         },
+                         cursor: "pointer",
+                         padding: "8px 16px",
+                         color: isDarkMode ? "#fff" : "#000",
+                       }}
+                     >
+                       <ListItemText primary={`${coin.name} (${coin.symbol})`} />
+                     </ListItem>
+                   ))}
+                 </List>
+               )}
+             </Paper>
+           </animated.div>
+         )}
+       </Box>
 
-          <TextField
-            label="Fees"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            value={fees}
-            onChange={(e) => {
-            const value = e.target.value;
-              if (/^\d*\.?\d*$/.test(value)) {
-                setFees(value); 
-              }
-            }}
-            autoComplete="off"
-            inputProps={{ 
-              inputMode: "decimal", pattern: "[0-9]*"
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <AiOutlineDollar size={20} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <TextField
-            label="Notes"
-            fullWidth
-            variant="outlined"
-            margin="normal"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            autoComplete="off"
-            multiline
-            rows={4}
-          />
-          <Button
-            variant="contained"
-            sx={{ mt: 2, width: "100%" }}
-            disabled={!coin || !quantity || !pricePerCoin}
-            onClick={handleSubmit}
-          >
-            Add Asset
-          </Button>
-        </Box>
-      </Modal>
+       {/* Quantity & Price Inputs */}
+       <Box display="flex"    justifyContent="space-between"    alignItems="center" gap={2}>
+         <TextField
+           label="Quantity"
+           fullWidth
+           variant="outlined"
+           margin="normal"
+           required
+           value={quantity}
+           onChange={(e) => {
+             const value = e.target.value;
+             if (/^\d*\.?\d*$/.test(value)) {
+               setQuantity(value);
+             }
+           }}
+           autoComplete="off"
+           inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
+           sx={{
+             bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+             color: isDarkMode ? "#fff" : "#000",
+           }}
+         />
+         <TextField
+           label="Price Per Coin"
+           fullWidth
+           variant="outlined"
+           margin="normal"
+           required
+           value={pricePerCoin}
+           onChange={(e) => {
+             const value = e.target.value;
+             if (/^\d*\.?\d*$/.test(value)) {
+               setPricePerCoin(value);
+             }
+           }}
+           autoComplete="off"
+           inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
+           sx={{
+             bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+             color: isDarkMode ? "#fff" : "#000",
+           }}
+           InputProps={{
+             endAdornment: (
+               <InputAdornment position="end">
+                 <AiOutlineDollar size={20} color={isDarkMode ? "#fff" : "#000"} />
+               </InputAdornment>
+             ),
+           }}
+         />
+       </Box>
 
-      {snackbar.open && (
-         <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
-       )}
+       {/* Total Spent */}
+       <TextField
+         label="Total spent"
+         fullWidth
+         variant="outlined"
+         margin="normal"
+         value={totalSpent}
+         autoComplete="off"
+         inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
+         sx={{
+           bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+           color: isDarkMode ? "#fff" : "#000",
+         }}
+         InputProps={{
+           endAdornment: (
+             <InputAdornment position="end">
+               <AiOutlineDollar size={20} color={isDarkMode ? "#fff" : "#000"} />
+             </InputAdornment>
+           ),
+         }}
+       />
 
-      <AssetDetails 
-         showAssetDetails={showAssetDetails}
-         setShowAssetDetails={setShowAssetDetails}
-         selectedAsset={selectedAsset}
-      />
+       {/* Fees */}
+       <TextField
+         label="Fees"
+         fullWidth
+         variant="outlined"
+         margin="normal"
+         value={fees}
+         onChange={(e) => {
+           const value = e.target.value;
+           if (/^\d*\.?\d*$/.test(value)) {
+             setFees(value);
+           }
+         }}
+         autoComplete="off"
+         inputProps={{ inputMode: "decimal", pattern: "[0-9]*" }}
+         sx={{
+           bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+           color: isDarkMode ? "#fff" : "#000",
+         }}
+         InputProps={{
+           endAdornment: (
+             <InputAdornment position="end">
+               <AiOutlineDollar size={20} color={isDarkMode ? "#fff" : "#000"} />
+             </InputAdornment>
+           ),
+         }}
+       />
 
-      <PortfolioAction 
-        showActionModal={showActionModal}
-        setShowActionModal={setShowActionModal}
-        selectedAsset={selectedAsset}
-        userId={token?.id}
-        onLoadingChange={handleLoadingChange}  
-      />
+       {/* Notes */}
+       <TextField
+         label="Notes"
+         fullWidth
+         variant="outlined"
+         margin="normal"
+         value={notes}
+         onChange={(e) => setNotes(e.target.value)}
+         autoComplete="off"
+         multiline
+         rows={4}
+         sx={{
+           bgcolor: isDarkMode ? "#1E1E1E" : "#fff",
+           color: isDarkMode ? "#fff" : "#000",
+         }}
+       />
+
+       {/* Submit Button */}
+       <Button
+         variant="contained"
+         sx={{
+           mt: 2,
+           width: "100%",
+           bgcolor: isDarkMode ? "#1976d2" : "#1565c0",
+           color: "#fff",
+           "&:hover": {
+             bgcolor: isDarkMode ? "#1565c0" : "#0d47a1",
+           },
+         }}
+         disabled={!coin || !quantity || !pricePerCoin}
+         onClick={handleSubmit}
+       >
+         Add Asset
+       </Button>
+     </Box>
+   </Modal>
+
+   {snackbar.open && (
+      <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
+   )}
+
+   <AssetDetails 
+      showAssetDetails={showAssetDetails}
+      setShowAssetDetails={setShowAssetDetails}
+      selectedAsset={selectedAsset}
+   />
+
+   <PortfolioAction 
+      showActionModal={showActionModal}
+      setShowActionModal={setShowActionModal}
+      selectedAsset={selectedAsset}
+      userId={token?.id}
+      onLoadingChange={handleLoadingChange} 
+      isDarkMode={isDarkMode} 
+    />
 
    </div>
  );

@@ -63,10 +63,10 @@ interface AssetWithValue {
 
 const cache = new Map();
 const cache24h = new Map();
-const fetchHistoricalData = async (range: string, assets: any[], getTopTwoAssetNames: Function) => {
-  const topAssets = getTopTwoAssetNames(assets);
+const fetchHistoricalData = async (range: string, assets: any[], getAllAssetNames: Function) => {
+  const allAssets = getAllAssetNames(assets);
 
-  const cacheKey = `${range}-${topAssets.map((asset: AssetWithValue) => asset.name).join('-')}`;
+  const cacheKey = `${range}-${allAssets.map((asset: AssetWithValue) => asset.name).join('-')}`;
 
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
@@ -75,10 +75,8 @@ const fetchHistoricalData = async (range: string, assets: any[], getTopTwoAssetN
   const historicalData = [];
   try {
     const days = range === "24h" ? "1" : range === "7d" ? "7" : range === "30d" ? "30" : "1";
-    
-    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    for (const assetName of topAssets) {
+    for (const assetName of allAssets) {
       const asset = assets.find(a => a.name === assetName);
       if (!asset) continue;
 
@@ -91,8 +89,6 @@ const fetchHistoricalData = async (range: string, assets: any[], getTopTwoAssetN
         historicalData.push({ name: asset.name, prices });
         continue;
       }
-
-      await sleep(5000);
 
       const response = await fetch(
         `/api/auth/coingecko?coin=${asset.name.toLowerCase()}&days=${days}`
@@ -415,38 +411,21 @@ const Portfolio = () => {
     };
   
     const { portfolioValueChange, portfolioPercentageChange } = calculatePortfolioChange(timePeriod); 
-    
-    const getTopTwoAssetNames = () => {
-      const assetsWithValue = assets.reduce<AssetWithValue[]>((acc, asset) => {
-        const matching = cryptoAssets.find((crypto) => crypto.name === asset.name);
-        const price = matching ? matching.currentPrice : '0';
-        const cleanedPrice = price.replace(",", "");
-        const value = parseFloat(cleanedPrice) * parseFloat(asset.amount);
-        acc.push({ name: asset.name, value });
-        return acc;
-      }, []);
-      
-      const topTwoAssets = assetsWithValue
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 2);
-    
-      return topTwoAssets.map((asset) => asset.name);
-    };
+
+    const getAllAssetNames = () => {
+      return assets.map(asset => asset.name);
+    };    
     
     useEffect(() => {
       if (assets.length > 0) {
         const fetchData = async () => {
           setGraphLoading(true);
-          const portfolioValueOverTime = await fetchHistoricalData(timePeriod, assets, getTopTwoAssetNames);
+          const portfolioValueOverTime = await fetchHistoricalData(timePeriod, assets, getAllAssetNames);
           setChartData(portfolioValueOverTime);
           setGraphLoading(false);
         };
     
-        const timer = setTimeout(() => {
-          fetchData();
-        }, 500);
-    
-        return () => clearTimeout(timer);
+        fetchData();
       }
     }, [timePeriod, assets]);
 

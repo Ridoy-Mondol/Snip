@@ -5,9 +5,19 @@ export async function GET(req: NextRequest) {
     const coin = searchParams.get("coin") || "bitcoin";
     const days = searchParams.get("days") || "7";
 
+    const apikey = process.env.COINGECKO_API_KEY;
+
+    if (!apikey) {
+      return NextResponse.json({ error: "Missing API key" }, { status: 400 });
+    }
+
     try {
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${days}`);
+          `https://api.coingecko.com/api/v3/coins/${coin}/market_chart?vs_currency=usd&days=${days}`, {
+            headers: {
+              "x-cg-api-key": apikey || ""
+            }
+          });
     
         if (!response.ok) {
            const data = await response.text();

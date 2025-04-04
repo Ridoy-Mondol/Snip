@@ -63,6 +63,7 @@
         "react-onesignal": "^3.0.1",
         "react-speech-recognition": "^3.10.0",
         "react-syntax-highlighter": "^15.6.1",
+        "recharts": "^2.15.1",
         "speech-to-text": "^2.9.1",
         "ua-parser-js": "^2.0.0",
         "universal-cookie": "^4.0.4",

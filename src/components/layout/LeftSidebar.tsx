@@ -305,6 +305,9 @@ export default function LeftSidebar() {
                 <MenuItem onClick={handleAnchorClose}>
                   <Link href="/portfolio">Portfolio</Link>
                 </MenuItem>
+                <MenuItem onClick={handleAnchorClose}>
+                  <Link href="/dao">DAO Dashboard</Link>
+                </MenuItem>
                 <MenuItem onClick={handleLogOutClick}>Log Out</MenuItem>
               </Menu>
             </>

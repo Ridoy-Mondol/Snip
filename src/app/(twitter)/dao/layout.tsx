@@ -21,15 +21,6 @@ export default function DaoDashboardLayout({ children }: { children: ReactNode }
 
   return (
     <Box>
-      {/* Navbar */}
-      {/* <AppBar position="static" color="default">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            🏛️ Snipverse DAO Dashboard
-          </Typography>
-        </Toolbar>
-      </AppBar> */}
-
       {/* DAO Header Section */}
       <Box textAlign="center" my={4}>
         <Typography variant="h4" fontWeight="bold">
@@ -49,32 +40,10 @@ export default function DaoDashboardLayout({ children }: { children: ReactNode }
           <Tab key={index} label={link.label} component={Link} href={link.path} />
         ))}
       </Tabs>
-        {/* <Box mt={2}>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AiOutlineUserAdd />}
-            sx={{ mx: 1 }}
-            component={Link}
-            href="/dao/candidate-registration"
-          >
-            Apply as Candidate
-          </Button>
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<FaVoteYea />}
-            sx={{ mx: 1 }}
-            component={Link}
-            href="/dao/elections"
-          >
-            View Elections
-          </Button>
-        </Box> */}
       </Box>
 
       {/* Page Content */}
-      <Box sx={{ p: 3 }}>{children}</Box>
+      <Box sx={{ p: 0 }}>{children}</Box>
     </Box>
   );
 }

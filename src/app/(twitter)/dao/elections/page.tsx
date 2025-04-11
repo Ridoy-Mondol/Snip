@@ -153,6 +153,7 @@ const Election = () => {
   const handleCreateElection = async () => {
     if (!activeSession) {
       alert('Please connect wallet first');
+      connectWallet();
       return;
     }
 
@@ -283,7 +284,7 @@ const Election = () => {
         <Button variant="contained" color="secondary" onClick={openCreateDialog} style={{ marginBottom: '10px' }}>
           Create New Election
         </Button>
-      )}
+       )} 
       
      <Typography variant="h6" component="h3" gutterBottom sx={{ mt: 3 }}>
         🟢 Active Elections
@@ -355,12 +356,12 @@ const Election = () => {
 
                <Typography mt={2} variant="body2" gutterBottom>
                  <FaUserFriends style={{ marginRight: 6, color: '#1976D2' }} />
-                 <strong>Applied Candidates:</strong>      {election.appliedCandidates?.length || 0}
+                 <strong>Applied Candidates:</strong>      {election.candidates?.length || 0}
                </Typography>
 
                <Typography mt={2} variant="body2" gutterBottom>
                  <FaVoteYea style={{ marginRight: 6, color: '#1976D2' }} />
-                 <strong>Total Votes:</strong> {election.totalVotes || 0}
+                 <strong>Total Votes:</strong> {election.totalVote || 0}
                </Typography>
                <Button
                  sx={{
@@ -446,12 +447,12 @@ const Election = () => {
 
                  <Typography mt={2} variant="body2" gutterBottom>
                    <FaUserFriends style={{ marginRight: 6, color: '#1976D2' }} />
-                   <strong>Applied Candidates:</strong>      {election.appliedCandidates?.length || 0}
+                   <strong>Applied Candidates:</strong>      {election.candidates?.length || 0}
                  </Typography>
 
                  <Typography mt={2} variant="body2" gutterBottom>
                    <FaVoteYea style={{ marginRight: 6, color: '#1976D2' }} />
-                   <strong>Total Votes:</strong> {election.totalVotes || 0}
+                   <strong>Total Votes:</strong> {election.totalVote || 0}
                  </Typography>
 
                  <Button

@@ -170,9 +170,6 @@ export const draftTweet = async (tweetData: {
     }
 };
 
-
-
-
 export const createBlog = async (blog: { 
     title: string, 
     category: string, 
@@ -307,9 +304,6 @@ export const getDraftBlogs = async (userId: string) => {
     if (!json.success) throw new Error(json.message ? json.message : "Something went wrong.");
     return json;
 };
-
-
-
 
 export const logIn = async (candidate: string) => {
     const response = await fetch(`${HOST_URL}/api/auth/login`, {

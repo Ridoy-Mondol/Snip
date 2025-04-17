@@ -112,6 +112,18 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
     }
   };
   
+  const getCachedUser = async (username: string) => {
+    const key = `user_${username}`;
+    const cached = sessionStorage.getItem(key);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    
+    const userData = await getUser(username);
+    sessionStorage.setItem(key, JSON.stringify(userData.user));
+    return userData.user;
+  };
+
   const fetchCandidates = async () => {
     setLoading(true);
     try {
@@ -127,8 +139,8 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
       
       const userFetchPromises = filteredCandidates.map(async (candidate) => {
         try {
-          const userData = await getUser(candidate.userName);
-          return { ...candidate, photoUrl: userData.user.photoUrl };
+          const userData = await getCachedUser(candidate.userName);
+          return { ...candidate, photoUrl: userData.photoUrl };
         } catch (error) {
           console.error(`Failed to fetch user data for ${candidate.userName}:`, error);
           return { ...candidate, photoUrl: null };

@@ -14,8 +14,10 @@ import {
   Box,
   Chip,
   Stack,
+  Tabs, 
+  Tab,
 } from '@mui/material';
-import { FaRegCalendarAlt, FaUserFriends, FaVoteYea } from 'react-icons/fa';
+import { FaRegCalendarAlt, FaUserFriends, FaVoteYea, FaUserTie, FaRegClock, FaBalanceScaleLeft } from 'react-icons/fa';
 import { MdHowToVote } from 'react-icons/md';
 import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
 import { JsonRpc } from 'eosjs';
@@ -27,6 +29,7 @@ const Election = () => {
   const [activeSession, setActiveSession] = useState<any>(null);
   const [activeLink, setActiveLink] = useState<Link | ProtonWebLink>();
   const [elections, setElections] = useState<any[]>([]);
+  const [recallData, setRecallData] = useState<any[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newElectionName, setNewElectionName] = useState('');
   const [newRegistrationStartTime, setNewRegistrationStartTime] = useState('');
@@ -35,6 +38,8 @@ const Election = () => {
   const [newEndTime, setNewEndTime] = useState('');
   const [newCandidateStake, setNewCandidateStake] = useState('');
   const [newVoterStake, setNewVoterStake] = useState('');
+  const [tab, setTab] = useState<number>(0);
+  const [recallTab, setRecallTab] = useState<number>(0);
 
   const router = useRouter();
 
@@ -69,6 +74,7 @@ const Election = () => {
   
     restore();
     fetchElections();
+    fetchRecallElections();
   }, []);
 
   const connectWallet = async () => {
@@ -126,6 +132,23 @@ const Election = () => {
       });
       console.log('Elections data:', result.rows);
       setElections(result.rows);
+    } catch (error) {
+      console.error('Failed to fetch elections:', error);
+    }
+  };
+
+  const fetchRecallElections = async () => {
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'recallvotes',
+        limit: 100,
+      });
+      console.log('Recall elections data:', result.rows);
+      setRecallData(result.rows);
     } catch (error) {
       console.error('Failed to fetch elections:', error);
     }
@@ -236,14 +259,13 @@ const Election = () => {
       console.error('Failed to create election:', error);
     }
   };
-
+  
+  const now = Math.floor(Date.now() / 1000);
   const isPastElection = (election: any) => {
-    const now = Math.floor(Date.now() / 1000);
     return now > election.endTime;
   };
 
   const isElectionOngoing = (election: any) => {
-    const now = Math.floor(Date.now() / 1000);
     return (now <= election.endTime && now >= election.startTime);
   };
 
@@ -256,10 +278,165 @@ const Election = () => {
     return `${month}/${day}/${year}`;
   };
 
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTab(newValue);
+  };
+
+  const handleRecallTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setRecallTab(newValue);
+  };
+
+  const activeElections = elections.filter((e) => !isPastElection(e));
+  const pastElections = elections.filter((e) => isPastElection(e));
+  
+  const activeRecalls = recallData.filter((e) => Number(e.endTime) > now);
+  const pastRecalls = recallData.filter((e) => Number(e.endTime) <= now);
+
+  const renderElectionCard = (election: any, isPast = false) => (
+    <Grid item xs={12} sm={6} key={election.electionName}>
+      <Box
+        sx={{
+          border: '1px solid #ccc',
+          borderRadius: 2,
+          transition: 'transform 0.3s ease',
+          '&:hover': { transform: 'scale(1.01)' },
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <Box
+          sx={{
+            p: 2,
+            backgroundColor: '#1976D2',
+            color: 'white',
+            borderRadius: 1,
+            mb: 1,
+          }}
+        >
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">
+              {election.electionName}
+            </Typography>
+            <Chip
+              label={isPast ? "ended" : isElectionOngoing(election) ? "ongoing" : "upcoming"}
+              color={isPast ? "warning" : "success"}
+              size="small"
+              variant="filled"
+              sx={{ color: "white" }}
+            />
+          </Box>
+        </Box>
+
+        <Box sx={{ p: 1 }}>
+          <Typography mt={2} variant="body2" gutterBottom>
+            <FaRegCalendarAlt style={{ marginRight: 6, color: '#1976D2' }} />
+            <strong>Reg:</strong> {formatDate(election.registrationStartTime)} - {formatDate(election.registrationEndTime)}
+          </Typography>
+          <Typography mt={2} variant="body2" gutterBottom>
+            <MdHowToVote style={{ marginRight: 6, color: '#1976D2' }} />
+            <strong>Voting:</strong> {formatDate(election.startTime)} - {formatDate(election.endTime)}
+          </Typography>
+          <Typography mt={2} variant="body2" gutterBottom>
+            <FaUserFriends style={{ marginRight: 6, color: '#1976D2' }} />
+            <strong>Applied Candidates:</strong> {election.candidates?.length || 0}
+          </Typography>
+          <Typography mt={2} variant="body2" gutterBottom>
+            <FaVoteYea style={{ marginRight: 6, color: '#1976D2' }} />
+            <strong>Total Votes:</strong> {election.totalVote || 0}
+          </Typography>
+
+          <Button
+            sx={{
+              mt: 2,
+              backgroundColor: '#1976D2',
+              color: 'white',
+              '&:hover': { backgroundColor: '#1565C0' },
+            }}
+            onClick={(e) => {
+              router.push(`/dao/elections/${election.electionName}`);
+              e.stopPropagation();
+            }}
+          >
+            View Details
+          </Button>
+        </Box>
+      </Box>
+    </Grid>
+  );
+
+  const renderRecallCards = (data: any[], emptyMessage: string) => {
+
+    if (data.length === 0) {
+      return (
+        <Typography variant="body1" color="text.secondary" mt={2}>
+          {emptyMessage}
+        </Typography>
+      );
+    }
+
+    return ( 
+     <Grid container spacing={2}>
+      {data.map((e) => (
+        <Grid item xs={12} sm={6} key={e.electionName}>
+          <Box
+            sx={{
+              border: '1px solid #ccc',
+              borderRadius: 2,
+              p: 2,
+              transition: 'transform 0.3s',
+              '&:hover': { transform: 'scale(1.01)' },
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6">{e.electionName}</Typography>
+              <Chip
+              label={pastRecalls ? "ended" : isElectionOngoing(e) ? "ongoing" : "upcoming"}
+              color="error"
+              size="small"
+              variant="filled"
+              sx={{ color: "white" }}
+            />
+
+            </Box>
+
+            <Typography mt={2}>
+              <FaUserTie style={{ marginRight: 6 }} />
+              <strong>Member:</strong> {e.councilMember}
+            </Typography>
+
+            <Typography mt={1}>
+              <FaRegClock style={{ marginRight: 6 }} />
+              <strong>Time:</strong> {formatDate(e.startTime)} - {formatDate(e.endTime)}
+            </Typography>
+
+            <Typography mt={1}>
+              <FaBalanceScaleLeft style={{ marginRight: 6 }} />
+              <strong>Votes:</strong> {e.keepVotes + e.replaceVotes}
+            </Typography>
+
+            <Typography mt={1}>
+              <strong>Reason:</strong> {e.reason}
+            </Typography>
+
+            <Button
+              sx={{ mt: 2 }}
+              variant="contained"
+              color="error"
+              onClick={() => router.push(`/dao/recall/${e.electionName}`)}
+            >
+              View Details
+            </Button>
+          </Box>
+        </Grid>
+      ))}
+    </Grid>
+  )};
+
+
   return (
     <Container maxWidth="md" style={{ marginTop: '20px' }}>
       <Typography variant="h4" component="h2" gutterBottom>
-        Blockchain Elections
+        Elections
       </Typography>
 
       {!activeSession ? (
@@ -286,194 +463,60 @@ const Election = () => {
         </Button>
        )} 
       
-     <Typography variant="h6" component="h3" gutterBottom sx={{ mt: 3 }}>
-        🟢 Active Elections
-     </Typography>
-     <Grid container spacing={2}>
-       {elections.filter((e) => !isPastElection(e)).length === 0 && (
-         <Grid item xs={12}>
-           <Typography variant="body1" color="textSecondary">
-             No active elections at the moment.
-           </Typography>
-         </Grid>
-       )}
-       {elections.filter((election) => !isPastElection(election)).map((election) => (
-           <Grid item xs={12} sm={6} key={election.electionName}>
-               <Box 
-                 sx={{
-                   border: '1px solid #ccc',
-                   borderRadius: 2,
-                   transition: 'transform 0.3s ease',
-                   '&:hover': { transform: 'scale(1.01)' },
-                   display: 'flex',
-                   flexDirection: 'column',
-                 }}
-               >
-               <Box
-                 sx={{
-                   p: 2,
-                   backgroundColor: '#1976D2',
-                   color: 'white',
-                   borderRadius: 1,
-                   mb: 1,
-                 }}
-               >
-                 <Box display="flex"      justifyContent="space-between"      alignItems="center">
-                   <Typography variant="h6"      fontWeight="bold">
-                     {election.electionName}
-                   </Typography>
-                   <Chip
-                   label={isElectionOngoing(election) ? "ongoing" : "upcoming"}
-                     color='success'
-                     size="small"
-                     variant="filled"
-                     sx={{
-                       color: "white"
-                     }}
-                   />
-                 </Box>
-               </Box>
+    {/* council member elections */}
+    <Box sx={{ width: '100%', my: '2rem' }}>
+      <Typography variant="h5" gutterBottom>
+      🗳️ Council Member Elections
+      </Typography>
+      <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }} textColor="primary" indicatorColor="primary">
+        <Tab label="🟢 Active Elections" />
+        <Tab label="🕒 Past Elections" />
+      </Tabs>
 
-             <Box 
-               sx={{
-                 p: 1,
-               }}
-             >
+      {/* Active Elections Tab */}
+      {tab === 0 && (
+        <Grid container spacing={2}>
+          {activeElections.length === 0 ? (
+            <Grid item xs={12}>
+              <Typography variant="body1" color="textSecondary">
+                No active elections at the moment.
+              </Typography>
+            </Grid>
+          ) : (
+            activeElections.map((e) => renderElectionCard(e))
+          )}
+        </Grid>
+      )}
 
-               {/* Rest of the Content */}
-               <Typography mt={2} variant="body2" gutterBottom>
-                 <FaRegCalendarAlt style={{ marginRight: 6, color: '#1976D2' }} />
-                 <strong>Registration:</strong>{' '}
-                 {formatDate(election.registrationStartTime)} -{' '}
-                 {formatDate(election.registrationEndTime)}
-               </Typography>
+      {/* Past Elections Tab */}
+      {tab === 1 && (
+        <Grid container spacing={2}>
+          {pastElections.length === 0 ? (
+            <Grid item xs={12}>
+              <Typography variant="body1" color="textSecondary">
+                No past elections recorded.
+              </Typography>
+            </Grid>
+          ) : (
+            pastElections.map((e) => renderElectionCard(e, true))
+          )}
+        </Grid>
+      )}
+    </Box>
+    
+    {/* Recall elections */}
+    <Box mt={6} mb={4}>
+      <Typography variant="h5" gutterBottom>
+        🔁 Recall Elections
+      </Typography>
 
-               <Typography mt={2} variant="body2" gutterBottom>
-                 <MdHowToVote style={{ marginRight: 6, color: '#1976D2' }} />
-                 <strong>Voting:</strong> {formatDate(election.startTime)} -{' '}
-                 {formatDate(election.endTime)}
-               </Typography>
+      <Tabs value={recallTab} onChange={handleRecallTabChange} sx={{ mb: 3 }}>
+        <Tab label="🔴 Active Recalls" />
+        <Tab label="🕓 Past Recalls" />
+      </Tabs>
 
-               <Typography mt={2} variant="body2" gutterBottom>
-                 <FaUserFriends style={{ marginRight: 6, color: '#1976D2' }} />
-                 <strong>Applied Candidates:</strong>      {election.candidates?.length || 0}
-               </Typography>
-
-               <Typography mt={2} variant="body2" gutterBottom>
-                 <FaVoteYea style={{ marginRight: 6, color: '#1976D2' }} />
-                 <strong>Total Votes:</strong> {election.totalVote || 0}
-               </Typography>
-               <Button
-                 sx={{
-                   mt: 2,
-                   backgroundColor: '#1976D2',
-                   color: 'white',
-                   '&:hover': { backgroundColor: '#1565C0' },
-                 }}
-                 onClick={(e) => {
-                  router.push(`/dao/elections/${election.electionName}`);
-                  e.stopPropagation();
-                }}
-               >
-                 View Details
-               </Button>
-             </Box>
-             </Box>
-           </Grid>
-         ))}
-     </Grid>
-
-     <Typography variant="h6" component="h3" gutterBottom sx={{ mt: 4 }}>
-       🕒 Past Elections
-     </Typography>
-     <Grid container spacing={2}>
-       {elections.filter((e) => isPastElection(e)).length === 0 && (
-         <Grid item xs={12}>
-           <Typography variant="body1"        color="textSecondary">
-             No past elections recorded.
-           </Typography>
-         </Grid>
-       )}
-       {elections.filter((election) => isPastElection(election)).map((election) => (
-           <Grid item xs={12} sm={6} key={election.electionName} mb={6}>
-             <Box
-               sx={{
-                 border: '1px solid #ccc',
-                 borderRadius: 2,
-                 transition: 'transform 0.3s ease',
-                 '&:hover': { transform: 'scale(1.01)' },
-                 display: 'flex',
-                 flexDirection: 'column',
-               }}
-             >
-
-               <Box
-                 sx={{
-                   p: 2,
-                   backgroundColor: '#1976D2',
-                   color: 'white',
-                   borderRadius: 1,
-                   mb: 1,
-                 }}
-               >
-                 <Box display="flex"      justifyContent="space-between"      alignItems="center">
-                   <Typography variant="h6"      fontWeight="bold">
-                     {election.electionName}
-                   </Typography>
-                   <Chip
-                     label="completed"
-                     color='warning'
-                     size="small"
-                     variant="filled"
-                     sx={{
-                       color: "white"
-                     }}
-                   />
-                 </Box>
-               </Box>
-
-               <Box sx={{ p: 1 }}>
-                 <Typography mt={2} variant="body2" gutterBottom>
-                   <FaRegCalendarAlt style={{ marginRight: 6, color: '#1976D2' }} />
-                   <strong>Registration:</strong>      {formatDate(election.registrationStartTime)} -{' '}
-                   {formatDate(election.registrationEndTime)}
-                 </Typography>
-
-                 <Typography mt={2} variant="body2" gutterBottom>
-                   <MdHowToVote style={{ marginRight: 6, color: '#1976D2' }} />
-                   <strong>Voting:</strong> {formatDate(election.startTime)} -{' '}
-                   {formatDate(election.endTime)}
-                 </Typography>
-
-                 <Typography mt={2} variant="body2" gutterBottom>
-                   <FaUserFriends style={{ marginRight: 6, color: '#1976D2' }} />
-                   <strong>Applied Candidates:</strong>      {election.candidates?.length || 0}
-                 </Typography>
-
-                 <Typography mt={2} variant="body2" gutterBottom>
-                   <FaVoteYea style={{ marginRight: 6, color: '#1976D2' }} />
-                   <strong>Total Votes:</strong> {election.totalVote || 0}
-                 </Typography>
-
-                 <Button
-                 sx={{
-                   mt: 2,
-                   backgroundColor: '#1976D2',
-                   color: 'white',
-                   '&:hover': { backgroundColor: '#1565C0' },
-                 }}
-                 onClick={(e) => {
-                   router.push(`/dao/elections/${election.electionName}`);
-                   e.stopPropagation();
-                 }}
-               >
-                 View Details
-               </Button>
-               </Box>
-             </Box>
-           </Grid>
-         ))}
-     </Grid>
+      {recallTab === 0 ? renderRecallCards(activeRecalls, 'No active recall elections at the moment.') : renderRecallCards(pastRecalls, 'No past recall elections recorded.')}
+    </Box>
 
       {/* Create Election Dialog */}
       <Dialog open={isCreateDialogOpen} onClose={closeCreateDialog} fullWidth maxWidth="sm">

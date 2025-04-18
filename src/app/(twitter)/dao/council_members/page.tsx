@@ -24,6 +24,7 @@ import {
   DialogTitle,
   Card,
   CardContent,
+  Stack,
 } from '@mui/material';
 import {
   FaUserCircle,
@@ -36,6 +37,9 @@ import {
   FaCaretRight,
 } from 'react-icons/fa';
 import { MdGavel, MdPersonAdd, MdPersonRemove } from 'react-icons/md';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
@@ -46,6 +50,12 @@ const CouncilMembersPage = () => {
   const [selectedElection, setSelectedElection] = useState<any>(null);
   const [members, setMembers] = useState<any>([]);
   const [epochSeconds, setEpochSeconds] = useState(0);
+  const [showRecallForm, setShowRecallForm] = useState(false);
+  const [recalledMember, setRecalledMember] = useState("");
+  const [recalledElection, setRecalledElection] = useState("");
+  const [reason, setReason] = useState("");
+  const [newStartTime, setNewStartTime] = useState('');
+  const [newEndTime, setNewEndTime] = useState('');
 
   const permission =
     activeSession?.auth?.actor?.toString() === "snipvote" ||
@@ -173,6 +183,8 @@ const CouncilMembersPage = () => {
     }
   };
 
+  console.log(members);
+
   const declareMembers = async () => {
     if (!activeSession) {
       connectWallet();
@@ -207,6 +219,76 @@ const CouncilMembersPage = () => {
       console.error('Winner declaration failed:', error);
     }
   };
+
+
+
+  const handleRecall = async () => {
+    if (!activeSession) {
+      alert('Please connect wallet first');
+      connectWallet();
+      return;
+    }
+
+    if (!recalledMember || !recalledElection) {
+      return;
+    }
+    if (!reason.trim()) {
+      alert('Please choose a reason to recall member.');
+      return;
+    }
+    if (!newStartTime.trim()) {
+      alert('Voting Start Time cannot be empty.');
+      return;
+    }
+    if (!newEndTime.trim()) {
+      alert('Voting End Time cannot be empty.');
+      return;
+    }
+
+    try {
+      const startUTC = new Date(newStartTime);
+      const endUTC = new Date(newEndTime);
+
+      const startTimeSec = Math.floor(startUTC.getTime() / 1000);
+      const endTimeSec = Math.floor(endUTC.getTime() / 1000);
+
+      const action = {
+        account: 'snipvote',
+        name: 'createrecall',
+        authorization: [
+          {
+            actor: activeSession.auth.actor.toString(),
+            permission: activeSession.auth.permission.toString(),
+          },
+        ],
+        data: {
+          councilMember: recalledMember,
+          electionName: recalledElection,
+          reason: reason,
+          startTime: startTimeSec,
+          endTime: endTimeSec,
+          signer: activeSession.auth.actor.toString(),
+        },
+      };
+
+      const result = await activeSession.transact(
+        {
+          actions: [action],
+        },
+        {
+          broadcast: true,
+        }
+      );
+
+      console.log('Election created successfully:', result);
+      alert('Recall election created successfully!');
+      setShowRecallForm(false);
+    } catch (error: any) {
+      console.error('Failed to create recall election:', error);
+    }
+  };
+
+
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -264,7 +346,13 @@ const CouncilMembersPage = () => {
                     {
                     permission &&
                     <TableCell>
-                      <Button size="small" color="error" startIcon={<MdGavel />}>
+                      <Button size="small" color="error" startIcon={<MdGavel />} 
+                      onClick={() => {
+                        setShowRecallForm(true);
+                        setRecalledMember(member.winner);
+                        setRecalledElection(member.electionName)
+                      }}
+                      >
                         Initiate
                       </Button>
                   </TableCell>
@@ -277,6 +365,56 @@ const CouncilMembersPage = () => {
        </Paper>
        </>
       }
+
+
+
+      {/* Create Election Dialog */}
+      <Dialog open={showRecallForm} onClose={() => setShowRecallForm(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Initiate recall election for {recalledMember}</DialogTitle>
+              
+        <DialogContent>
+        <Stack spacing={2} mt={1}>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Member"
+            fullWidth
+            value={recalledMember}
+            disabled
+          />
+
+          <TextField
+            margin="dense"
+            label="Reason for recall"
+            fullWidth
+            type="text"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+      
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DateTimePicker
+              label="Voting Start Time (UTC)"
+              value={newStartTime ? new Date(newStartTime) : null}
+              onChange={(value) => setNewStartTime(value?.toISOString() ?? "")}
+            />
+      
+            <DateTimePicker
+              label="Voting End Time (UTC)"
+              value={newEndTime ? new Date(newEndTime) : null}
+              onChange={(value) => setNewEndTime(value?.toISOString() ?? "")}
+            />
+          </LocalizationProvider>
+        </Stack>
+        </DialogContent>
+      
+        <DialogActions>
+          <Button onClick={() => setShowRecallForm(false)}>Cancel</Button>
+          <Button color="secondary" onClick={handleRecall}>
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
 
 
 

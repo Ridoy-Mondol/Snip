@@ -289,8 +289,11 @@ const Election = () => {
   const activeElections = elections.filter((e) => !isPastElection(e));
   const pastElections = elections.filter((e) => isPastElection(e));
   
-  const activeRecalls = recallData.filter((e) => Number(e.endTime) > now);
-  const pastRecalls = recallData.filter((e) => Number(e.endTime) <= now);
+  const activeRecalls = recallData.filter((e) => !isPastElection(e));
+  const pastRecalls = recallData.filter((e) => isPastElection(e));
+  const recallEnded = (endTime: number) => {
+    return endTime < now;
+  }
 
   const renderElectionCard = (election: any, isPast = false) => (
     <Grid item xs={12} sm={6} key={election.electionName}>
@@ -390,7 +393,7 @@ const Election = () => {
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Typography variant="h6">{e.electionName}</Typography>
               <Chip
-              label={pastRecalls ? "ended" : isElectionOngoing(e) ? "ongoing" : "upcoming"}
+              label={recallEnded(e.endTime) ? "ended" : isElectionOngoing(e) ? "ongoing" : "upcoming"}
               color="error"
               size="small"
               variant="filled"
@@ -422,7 +425,11 @@ const Election = () => {
               sx={{ mt: 2 }}
               variant="contained"
               color="error"
-              onClick={() => router.push(`/dao/recall/${e.electionName}`)}
+              onClick={() => {
+                router.push(
+                  `/dao/elections/recall?member=${encodeURIComponent(e.councilMember)}&election=${encodeURIComponent(e.electionName)}`
+                );
+              }}              
             >
               View Details
             </Button>

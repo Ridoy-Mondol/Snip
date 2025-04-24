@@ -418,7 +418,7 @@ const Election = () => {
             </Typography>
 
             <Typography mt={1}>
-              <strong>Reason:</strong> {e.reason}
+              <strong>Reason:</strong> {e.reason.length > 15 ? `${e.reason.slice(0, 15)}...` : e.reason}
             </Typography>
 
             <Button

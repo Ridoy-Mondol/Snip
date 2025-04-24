@@ -158,7 +158,7 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
   };
   
   useEffect(() => {
-  const alreadyRegistered = candidates.filter((c) => c.account === activeSession.auth.actor.toString());
+  const alreadyRegistered = candidates.filter((c) => c.account === activeSession?.auth.actor.toString());
   if (alreadyRegistered.length > 0) {
     setIsRegistered(true);
   }

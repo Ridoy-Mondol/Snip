@@ -49,6 +49,9 @@ const ModeratorPage = () => {
   const [activeSession, setActiveSession] = useState<any>(null);
   const [activeLink, setActiveLink] = useState<Link | ProtonWebLink>();
   const [moderators, setModerators] = useState<any>([]);
+  const [showRecallForm, setShowRecallForm] = useState(false);
+  const [recalledMod, setRecalledMod] = useState("");
+  const [reason, setReason] = useState("");
 
   const permission =
     activeSession?.auth?.actor?.toString() === "snipvote" ||
@@ -231,6 +234,55 @@ const ModeratorPage = () => {
     }
   };
 
+  const handleModRecall = async () => {
+    if (!activeSession) {
+      alert('Please connect wallet first');
+      connectWallet();
+      return;
+    }
+
+    if (!recalledMod) {
+      return;
+    }
+    if (!reason.trim()) {
+      alert('Please choose a reason to recall moderator.');
+      return;
+    }
+
+    try {
+      const action = {
+        account: 'snipvote',
+        name: 'modrecall',
+        authorization: [
+          {
+            actor: activeSession.auth.actor.toString(),
+            permission: activeSession.auth.permission.toString(),
+          },
+        ],
+        data: {
+          moderator: recalledMod,
+          reason: reason,
+          signer: activeSession.auth.actor.toString(),
+        },
+      };
+
+      const result = await activeSession.transact(
+        {
+          actions: [action],
+        },
+        {
+          broadcast: true,
+        }
+      );
+
+      console.log('Recall election created successfully:', result);
+      alert('Recall election created successfully!');
+      setShowRecallForm(false);
+    } catch (error: any) {
+      console.error('Failed to create recall election:', error);
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
        <Typography variant="h4" gutterBottom>
@@ -278,7 +330,7 @@ const ModeratorPage = () => {
               <TableRow>
                 <TableCell>#</TableCell>
                 <TableCell>Name</TableCell>
-                <TableCell>Role</TableCell>
+                <TableCell>Approval</TableCell>
                 <TableCell>Profile</TableCell>
                 {permission &&
                 <TableCell>Recall</TableCell>
@@ -286,19 +338,19 @@ const ModeratorPage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {moderators?.slice().sort((a: any, b: any) => a.rank - b.rank).map((member: any, index: number) => (
+              {moderators?.slice().sort((a: any, b: any) => a.rank - b.rank).map((moderator: any, index: number) => (
                 <TableRow key={index}>
                   <TableCell>
                     {index + 1}
                   </TableCell>
                   <TableCell>
                     <Box display="flex" alignItems="center" gap={1}>
-                    <Avatar src={member.photoUrl && getFullURL(member.photoUrl)} />
-                      {member.winner}
+                    <Avatar src={moderator.photoUrl && getFullURL(moderator.photoUrl)} />
+                      {moderator.account}
                     </Box>
                   </TableCell>
                   <TableCell>
-                    {member.isFoundingMember ? "Founder" : "Elected"}
+                  {new Date(moderator.approvedAt * 1000).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <Button size="small" variant="outlined" startIcon={<FaCaretRight />}>
@@ -309,11 +361,10 @@ const ModeratorPage = () => {
                     permission &&
                     <TableCell>
                       <Button size="small" color="error" startIcon={<MdGavel />} 
-                    //   onClick={() => {
-                    //     setShowRecallForm(true);
-                    //     setRecalledMember(member.winner);
-                    //     setRecalledElection(member.electionName)
-                    //   }}
+                      onClick={() => {
+                        setShowRecallForm(true);
+                        setRecalledMod(moderator.account);
+                      }}
                       >
                         Initiate
                       </Button>
@@ -331,8 +382,8 @@ const ModeratorPage = () => {
 
 
       {/* Create Election Dialog */}
-      {/* <Dialog open={showRecallForm} onClose={() => setShowRecallForm(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Initiate recall election for {recalledMember}</DialogTitle>
+      <Dialog open={showRecallForm} onClose={() => setShowRecallForm(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Initiate recall election for {recalledMod}</DialogTitle>
               
         <DialogContent>
         <Stack spacing={2} mt={1}>
@@ -341,7 +392,7 @@ const ModeratorPage = () => {
             margin="dense"
             label="Member"
             fullWidth
-            value={recalledMember}
+            value={recalledMod}
             disabled
           />
 
@@ -353,30 +404,16 @@ const ModeratorPage = () => {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           />
-      
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DateTimePicker
-              label="Voting Start Time (UTC)"
-              value={newStartTime ? new Date(newStartTime) : null}
-              onChange={(value) => setNewStartTime(value?.toISOString() ?? "")}
-            />
-      
-            <DateTimePicker
-              label="Voting End Time (UTC)"
-              value={newEndTime ? new Date(newEndTime) : null}
-              onChange={(value) => setNewEndTime(value?.toISOString() ?? "")}
-            />
-          </LocalizationProvider>
         </Stack>
         </DialogContent>
       
         <DialogActions>
           <Button onClick={() => setShowRecallForm(false)}>Cancel</Button>
-          <Button color="secondary" onClick={handleRecall}>
+          <Button color="secondary" onClick={handleModRecall}>
             Submit
           </Button>
         </DialogActions>
-      </Dialog> */}
+      </Dialog>
 
 
 

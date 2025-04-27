@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { label: "🗳️ Voting", path: "/dao/voting" },
   { label: "👥 Council Members", path: "/dao/council_members" },
   { label: "🧑‍⚖️ Moderators", path: "/dao/moderators" },
+  { label: "📜 Proposals", path: "/dao/proposals" },
   { label: "⚠️ Recall Voting", path: "/dao/recall-vote" },
   { label: "💰 Community Wallet", path: "/dao/community-wallet" },
 ];

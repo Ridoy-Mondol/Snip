@@ -918,7 +918,7 @@ const CouncilMembersPage = () => {
 
     {/* Past Recalls */}
     {recallTab === 1 && (
-      <Box>
+      <Paper sx={{ mb: 2, p: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -948,7 +948,7 @@ const CouncilMembersPage = () => {
             ))}
           </TableBody>
         </Table>
-      </Box>
+      </Paper>
     )}
     </Box>
    }

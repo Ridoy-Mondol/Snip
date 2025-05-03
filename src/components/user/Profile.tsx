@@ -195,6 +195,12 @@ export default function Profile({ profile }: { profile: UserProps }) {
                     <span>Drafts</span>
                 </Link>
                 <Link
+                    className={`profile-nav-link ${pathname === `/${profile.username}/hidden` ? "active" : ""}`}
+                    href={`/${profile.username}/hidden`}
+                >
+                    <span>Hidden</span>
+                </Link>
+                <Link
                     className={`profile-nav-link ${pathname === `/${profile.username}/replies` ? "active" : ""}`}
                     href={`/${profile.username}/replies`}
                 >

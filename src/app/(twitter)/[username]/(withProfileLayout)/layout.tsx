@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query"
 
 import NotFound from "@/app/not-found";
 import Profile from "@/components/user/Profile";

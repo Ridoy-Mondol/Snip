@@ -4,8 +4,9 @@ generator client {
 
 datasource db {
     provider          = "postgresql"
-    url               = env("DATABASE_URL")
-    directUrl         = env("DIRECT_URL")
+    url               = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+    directUrl         = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres"
+    shadowDatabaseUrl = "postgresql://postgres.edduuatujlvepjzkvtau:PtXwkevZSIjsk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?schema=prisma_shadow"
 }
 
 model User {
@@ -43,6 +44,7 @@ model User {
     playerIds String[] @default([])
     subscriptions    Subscription[] @relation("userSubscriptions")
     subscribers      Subscription[] @relation("userSubscribers")
+    appeals          Appeal[]       @relation("UserAppeals")
 }
 
 model Asset {
@@ -77,11 +79,13 @@ model Tweet {
     id          String   @id @default(uuid())
     text        String?  @db.VarChar(600)
     status      String   @default("published")
+    appealed    Boolean  @default(false)
     scheduledAt DateTime?
     createdAt   DateTime @default(now())
     author      User     @relation("userTweets", fields: [authorId], references: [id])
     authorId    String
     photoUrl    String?
+    appeal      Appeal?  @relation("TweetAppeal")
     likedBy     User[]   @relation("userLikes")
     retweetedBy User[]   @relation("userRetweets")
     replies     Tweet[]  @relation("tweetReplies")
@@ -119,6 +123,16 @@ model Vote {
   pollOption   PollOption   @relation("pollOptionVotes", fields: [pollOptionId], references: [id])
 
   @@unique([userId, pollOptionId])  // Ensures a user can vote only once for each option
+}
+
+model Appeal {
+  id        String   @id @default(uuid())
+  tweet     Tweet    @relation("TweetAppeal", fields: [tweetId], references: [id], onDelete: Cascade)
+  tweetId   String   @unique
+  author    User     @relation("UserAppeals", fields: [authorId], references: [id])
+  authorId  String
+  reason    String   @db.Text
+  createdAt DateTime @default(now())
 }
 
 model Message {

@@ -1,10 +1,12 @@
 import { Avatar, Popover, Tooltip, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
+import ProtonWebSDK, { Link as ProtonLink, ProtonWebLink } from '@proton/web-sdk';
+import { JsonRpc } from 'eosjs';
 import { useContext, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { AiFillTwitterCircle } from "react-icons/ai";
+import { AiFillTwitterCircle, AiOutlineFlag } from "react-icons/ai";
 import { FiVolume2, FiVolumeX, FiPlay, FiPause } from "react-icons/fi";
 
 import { TweetProps } from "@/types/TweetProps";
@@ -19,10 +21,12 @@ import { getFullURL } from "@/utilities/misc/getFullURL";
 import { AuthContext } from "@/context/AuthContext";
 import ProfileCard from "../user/ProfileCard";
 import CircularLoading from "../misc/CircularLoading";
-import { LinearProgress, Button, IconButton } from "@mui/material";
+import { LinearProgress, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { speakText } from "@/utilities/textToSpeech";
 
 export default function Tweet({ tweet }: { tweet: TweetProps }) {
+    const [activeSession, setActiveSession] = useState<any>(null);
+    const [activeLink, setActiveLink] = useState<ProtonLink | ProtonWebLink>();
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -34,9 +38,70 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [isModerator, setIsmoderator] = useState(false);
+    const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+    const [newReason, setNewReason] = useState("");
+    const [newCategory, setNewCategory] = useState("");
 
     const { token } = useContext(AuthContext);
     const router = useRouter();
+
+
+    useEffect(() => {
+          const restore = async () => {
+            try {
+              const { link, session } = await ProtonWebSDK({
+                linkOptions: {
+                  chainId: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
+                  endpoints: ['https://tn1.protonnz.com'],
+                  restoreSession: true,
+                },
+                transportOptions: {
+                  requestAccount: 'snipvote',
+                },
+                selectorOptions: {
+                  appName: 'Snipverse',
+                },
+              });
+        
+              if (session && link) {
+                setActiveSession(session);
+                setActiveLink(link);
+              } else {
+                console.log('ℹ️ No session found or session invalid.');
+              }
+            } catch (error) {
+              console.error('❌ Error during session restoration:', error);
+            }
+          };
+        
+          restore();
+        }, []);
+      
+        const connectWallet = async () => {
+          try {
+            const { link, session } = await ProtonWebSDK({
+              linkOptions: {
+                endpoints: ["https://tn1.protonnz.com"],
+                chainId: "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd",
+                restoreSession: false,
+              },
+              transportOptions: {
+                requestAccount: "snipvote",
+              },
+              selectorOptions: {
+                appName: "Snipverse",
+              },
+            });
+      
+            if (session) {
+              setActiveSession(session);
+              setActiveLink(link);
+            }
+          } catch (error) {
+            console.error("Wallet connection failed:", error);
+          }
+        };
 
     const handleTweetClick = () => {
         router.push(`/${tweet.author.username}/tweets/${tweet.id}`);
@@ -207,6 +272,139 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         setIsSpeaking(false);
         setIsPaused(false);
       };
+
+
+      const fetchModerators = async () => {
+        if (!activeSession?.auth?.actor) {
+          console.warn("No active session or actor found.");
+          return;
+        }
+        try {
+          const rpc = new JsonRpc('https://tn1.protonnz.com');
+          const result = await rpc.get_table_rows({
+            json: true,
+            code: 'snipvote',
+            scope: 'snipvote',
+            table: 'moderators',
+            limit: 100,
+          });
+
+          const isMod = result.rows.some(
+            (m) => m.account.toString() === activeSession.auth.actor.toString()
+          );
+          if (isMod) {
+            setIsmoderator(true);
+          }
+        } catch (error) {
+          console.error('Failed to fetch moderator:', error);
+        }
+      };
+
+      useEffect (() => {
+        fetchModerators();
+      }, [activeSession?.auth?.actor])
+
+      const handleReport = async (postId: string) => {
+        if (!activeSession) {
+          connectWallet();
+          return;
+        }
+
+        if (!newReason.trim()) {
+          alert('Reason cannot be empty.');
+          return;
+        }
+        if (!newCategory.trim()) {
+          alert('Select a Category.');
+          return;
+        }
+    
+        try {
+          const action = {
+            account: 'snipvote',
+            name: 'reportpost',
+            authorization: [
+              {
+                actor: activeSession.auth.actor.toString(),
+                permission: activeSession.auth.permission.toString(),
+              },
+            ],
+            data: {
+                moderator: activeSession.auth.actor.toString(),
+                postId: postId,
+                reason: newReason,
+                category: newCategory,
+            },
+          };
+    
+          const result = await activeSession.transact(
+            {
+              actions: [action],
+            },
+            {
+              broadcast: true,
+            }
+          );
+          
+        //   setSnackbar({
+        //     message: `You successfully voted in this proposal!`,
+        //     severity: "success",
+        //     open: true,
+        //   });
+        setIsReportDialogOpen(false);
+        alert("Successfully report this post");
+        await fetchReports(postId);
+    
+        } catch (error: any) {
+          console.error('Vote failed:', error);
+          alert("Report failed");
+        }
+      }
+
+      const fetchReports = async (postId: string) => {
+      try {
+        const rpc = new JsonRpc('https://tn1.protonnz.com');
+        const result = await rpc.get_table_rows({
+          json: true,
+          code: 'snipvote',
+          scope: 'snipvote',
+          table: 'modreports',
+          limit: 100,
+        });
+
+        const filteredReport = await result?.rows?.filter((r) => r.postId === postId && Number(r.reportCount) >= 3);
+        
+        if (filteredReport.length > 0) {
+          await hidePost (postId);
+        }
+      
+      } catch (error) {
+        console.error('Failed to fetch reports:', error);
+      }
+      };
+
+      const hidePost = async (postId: string) => {
+        try {
+          const res = await fetch('/api/tweets/hidden', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ postId }),
+          });
+      
+          const data = await res.json();
+      
+          if (!res.ok) {
+            throw new Error(data.message || 'Failed to hide post');
+          }
+      
+          console.log('Post successfully hidden');
+        } catch (error) {
+          console.error('Failed to hide post:', error);
+        }
+      }
+        
 
     if (loading) {
         return <CircularLoading />
@@ -449,8 +647,24 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                 <Retweet tweetId={tweet.id} tweetAuthor={tweet.author.username} />
                 <Like tweetId={tweet.id} tweetAuthor={tweet.author.username} />
                 <Share
-                    tweetUrl={`https://${window.location.hostname}/${tweet.author.username}/tweets/${tweet.id}`}
-                    />
+                  tweetUrl={`https://${window.location.hostname}/${tweet.author.username}/tweets/${tweet.id}`}
+                />
+                {
+                isModerator &&
+                <div
+                  onClick={(e) => {
+                    handlePropagation;
+                  }}
+                >
+                <IconButton 
+                onClick={(e) => 
+                  setIsReportDialogOpen(true)
+                }
+                >
+                    <AiOutlineFlag size={14} color={'#808080'} />
+                </IconButton>
+                </div>
+                }
                 </div>
             </div>
             <Popover
@@ -464,6 +678,56 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
             >
                 <ProfileCard username={hoveredProfile} token={token} />
             </Popover>
+
+            {/* Report Dialog */}
+            <Dialog open={isReportDialogOpen} onClose={() => setIsReportDialogOpen (false)} fullWidth maxWidth="sm" sx={{p: 2}}>
+            <div onClick={(e) => e.stopPropagation()}>
+            <DialogTitle>Report Post</DialogTitle>
+                        
+            <DialogContent>
+            <Stack spacing={2} mt={1}>
+                <TextField
+                margin="dense"
+                label="Reason"
+                fullWidth
+                value={newReason}
+                onChange={(e) => setNewReason(e.target.value)}
+                />
+            
+                <FormControl fullWidth margin="dense">
+                    <InputLabel>Category</InputLabel>
+                    <Select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    label="Category"
+                    >
+                    <MenuItem value="spam">Spam</MenuItem>
+                    <MenuItem value="abuse">Abuse</MenuItem>
+                    <MenuItem value="violence">Violence</MenuItem>
+                    </Select>
+                </FormControl>
+            </Stack>
+            </DialogContent>
+                
+            <DialogActions>
+               <div onClick={handlePropagation}>
+                <Button onClick={() => 
+                  setIsReportDialogOpen(false)
+                }>Cancel</Button>
+                </div>
+                <div onClick={handlePropagation}>
+                <Button color="secondary" onClick={
+                  () => 
+                    handleReport(tweet.id)
+                  }>
+                  Report
+                </Button>
+                </div>
+            </DialogActions>
+            </div>
+            </Dialog>
+
+
             
         </motion.div>
     );

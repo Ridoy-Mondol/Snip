@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FaHeart, FaRegComment, FaRegEnvelope } from "react-icons/fa";
 import { GiPartyPopper } from "react-icons/gi";
 import { RiChatFollowUpLine } from "react-icons/ri";
+import { FaLock, FaCheckCircle, FaTrashAlt } from "react-icons/fa";
 import { Avatar, Popover } from "@mui/material";
 
 import { NotificationProps, NotificationContent } from "@/types/NotificationProps";  
@@ -171,6 +172,53 @@ export default function Notification({ notification, token }: { notification: No
                     {sharedJSX} <span className={!notification.isRead ? "bold" : ""}>Retweeted your</span>{" "}
                     <Link className={`notification-link ${!notification.isRead ? "bold" : ""}`} href={tweetUrl}>
                         tweet.
+                    </Link>
+                </div>
+            </div>
+        );
+    } else if (notification.type === "hidden") {
+        return (
+            <div className="notification">
+                <div className="icon-div hidden">
+                    <FaLock />
+                </div>
+                <div>
+                    {sharedJSX} 
+                    <span className={!notification.isRead ? "bold" : ""}>Your post has been temporarily hidden</span>{" "}
+                    <Link className={`notification-link ${!notification.isRead ? "bold" : ""}`} href={tweetUrl}>
+                        due to reports.
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+    else if (notification.type === "published") {
+        return (
+            <div className="notification">
+                <div className="icon-div restored">
+                    <FaCheckCircle />
+                </div>
+                <div>
+                    {sharedJSX} 
+                    <span className={!notification.isRead ? "bold" : ""}>Your post has been restored</span>{" "}
+                    <Link className={`notification-link ${!notification.isRead ? "bold" : ""}`} href={tweetUrl}>
+                        after moderation.
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+    else if (notification.type === "deleted") {
+        return (
+            <div className="notification">
+                <div className="icon-div deleted">
+                    <FaTrashAlt />
+                </div>
+                <div>
+                    {sharedJSX} 
+                    <span className={!notification.isRead ? "bold" : ""}>Your post has been deleted</span>{" "}
+                    <Link className={`notification-link ${!notification.isRead ? "bold" : ""}`} href={tweetUrl}>
+                        due to guideline violations.
                     </Link>
                 </div>
             </div>

@@ -78,7 +78,22 @@ function getNotificationContent(type: string, notification: any): { title: strin
                 title: "New Post!",
                 message: `${sender} created a new post.`,
             };
-        case "welcome":
+            case "hidden":
+            return {
+                title: "Post Temporarily Hidden!",
+                message: `Your content is currently hidden after receiving several community reports.You can appeal if you believe this was a mistake.`,
+            };
+            case 'deleted':
+            return {
+                title: "Post Removed!",
+                message: `Your post has been permanently removed for violating our community guidelines.`,
+            };
+            case 'published':
+            return {
+                title: "Post Restored!",
+                message: `Good news! Your hidden post has been restored after review.`,
+            };
+            case "welcome":
             return {
                 title: "Welcome!",
                 message: `Welcome to Snip!`,

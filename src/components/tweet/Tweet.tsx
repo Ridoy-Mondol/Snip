@@ -46,7 +46,6 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
     const { token } = useContext(AuthContext);
     const router = useRouter();
 
-
     useEffect(() => {
           const restore = async () => {
             try {
@@ -304,7 +303,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         fetchModerators();
       }, [activeSession?.auth?.actor])
 
-      const handleReport = async (postId: string) => {
+      const handleReport = async (postId: string, username: string) => {
         if (!activeSession) {
           connectWallet();
           return;
@@ -353,7 +352,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         //   });
         setIsReportDialogOpen(false);
         alert("Successfully report this post");
-        await fetchReports(postId);
+        await fetchReports(postId, username);
     
         } catch (error: any) {
           console.error('Vote failed:', error);
@@ -361,7 +360,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         }
       }
 
-      const fetchReports = async (postId: string) => {
+      const fetchReports = async (postId: string, username: string) => {
       try {
         const rpc = new JsonRpc('https://tn1.protonnz.com');
         const result = await rpc.get_table_rows({
@@ -375,7 +374,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
         const filteredReport = await result?.rows?.filter((r) => r.postId === postId && Number(r.reportCount) >= 3);
         
         if (filteredReport.length > 0) {
-          await hidePost (postId);
+          await hidePost (postId, username);
         }
       
       } catch (error) {
@@ -383,14 +382,14 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
       }
       };
 
-      const hidePost = async (postId: string) => {
+      const hidePost = async (postId: string, username: string) => {
         try {
-          const res = await fetch('/api/tweets/hidden', {
+          const res = await fetch('/api/tweets/status/update', {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ postId }),
+            body: JSON.stringify({ postId, status: "hidden", username }),
           });
       
           const data = await res.json();
@@ -718,7 +717,7 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
                 <div onClick={handlePropagation}>
                 <Button color="secondary" onClick={
                   () => 
-                    handleReport(tweet.id)
+                    handleReport(tweet.id, tweet.author.username)
                   }>
                   Report
                 </Button>

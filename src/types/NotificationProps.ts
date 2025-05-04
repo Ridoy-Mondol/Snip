@@ -12,7 +12,7 @@ export type NotificationProps = {
     createdAt: string;
 };
 
-export type NotificationTypes = "welcome" | "follow" | "like" | "reply" | "retweet" | "message" | "new post";
+export type NotificationTypes = "welcome" | "follow" | "like" | "reply" | "retweet" | "message" | "new post" | "hidden" | "published" | "deleted";
 
 export type NotificationContent = null | {
     content: null | {

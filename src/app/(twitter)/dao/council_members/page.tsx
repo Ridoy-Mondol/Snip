@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useRouter } from "next/navigation";
 import { JsonRpc } from 'eosjs';
 import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
@@ -26,7 +26,9 @@ import {
   Card,
   CardContent,
   Stack,
-  RadioGroup, FormControlLabel, Radio,
+  Divider,
+  useTheme,
+  RadioGroup, FormControlLabel, Radio, Chip
 } from '@mui/material';
 import {
   FaUserCircle,
@@ -38,7 +40,8 @@ import {
   FaRegBell,
   FaCaretRight,
 } from 'react-icons/fa';
-import { AiOutlineCheckCircle, AiOutlineCloseCircle } from 'react-icons/ai';
+import { FiAlertTriangle } from 'react-icons/fi';
+import { AiOutlineCheckCircle, AiOutlineCloseCircle, AiOutlineWarning, AiOutlineEye, AiOutlineSend } from 'react-icons/ai';
 import { MdGavel, MdPersonAdd, MdPersonRemove } from 'react-icons/md';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -46,6 +49,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
+import { TweetProps } from "@/types/TweetProps";
+import { AuthContext } from "@/context/AuthContext";
 
 
 function TabPanel(props: any) {
@@ -95,6 +100,10 @@ const CouncilMembersPage = () => {
   const [newEndTime, setNewEndTime] = useState('');
   const [modManagementTab, setModManagementTab] = useState(0);
   const [recallTab, setRecallTab] = useState(0);
+  const [activeReports, setActiveReports] = useState<any>([]);
+  const [reportVote, setReportVote] = useState<Record<string, "restore" | "delete">>({});
+  const [hiddenPosts, setHiddenPosts] = useState<TweetProps[]>([]);
+
 
   const permission =
     activeSession?.auth?.actor?.toString() === "snipvote" ||
@@ -103,6 +112,7 @@ const CouncilMembersPage = () => {
   
   const router = useRouter();
   const now = Math.floor(Date.now() / 1000);
+  const { token } = useContext(AuthContext);
 
   useEffect(() => {
     const restore = async () => {
@@ -331,6 +341,105 @@ const CouncilMembersPage = () => {
       console.error('Failed to fetch applications:', error);
     }
   };
+
+  const fetchAppeal = async (postId: string) => {
+    try {
+      const res = await fetch(`/api/appeal/get?postId=${postId}`);
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to fetch appeal.");
+      }
+  
+      return data.data; // { tweetId, reason }
+    } catch (error) {
+      console.error("Error fetching appeal:", error);
+      return null;
+    }
+  };
+  
+  const fetchAndFilterReports = async () => {
+    if (!token || !token.id) {
+      return;
+    }
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+  
+      // Fetch report votes
+      const reportVotesRes = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'reportvotes',
+        limit: 100,
+      });
+  
+      const reportVotes = reportVotesRes.rows;
+  
+      // Create a Set of postIds where status is 'voting'
+      const votingPostIds = new Map(
+        reportVotes.filter(vote => vote.status === 'voting').map(vote => [vote.postId, vote])
+      );
+  
+      // Fetch reports
+      const reportsRes = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'modreports',
+        limit: 100,
+      });
+  
+      const reports = reportsRes.rows;
+  
+      // Filter reports where postId is in votingPostIds
+      const filteredReports = reports.filter(report => votingPostIds.has(report.postId));
+  
+      console.log('Filtered Reports:', filteredReports);
+
+      // Ensure hiddenPosts is already fetched
+      const res = await fetch("/api/tweets/status/get", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          userId: token.id,
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch hidden posts");
+      const { hiddenPosts } = await res.json();
+
+      const hiddenPostsMap = new Map(hiddenPosts.map((post: any) => [post.id, post]));
+
+      // For each filtered report, fetch appeal and add reason if available
+      const reportsWithDetails = await Promise.all(
+      filteredReports.map(async (report) => {
+          const appeal = await fetchAppeal(report.postId);
+          const voteData = votingPostIds.get(report.postId);
+          const matchedPost = hiddenPostsMap.get(report.postId) as any;
+          return {
+            ...report,
+           appeal: appeal?.reason || null,
+           deletionVotes: voteData?.deletionVotes ?? 0,
+           restorationVotes: voteData?.restorationVotes ?? 0,
+           authorUsername: matchedPost?.author?.username || null,
+          };
+        })
+      );
+
+      console.log('Reports with Appeal Reasons:', reportsWithDetails);
+      setActiveReports(reportsWithDetails);
+      return reportsWithDetails;
+  
+    } catch (error) {
+      console.error('Failed to fetch or filter reports:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAndFilterReports();
+  }, [token, token?.id])
+
 
   const isMember =
   !!activeSession?.auth?.actor?.toString() &&
@@ -622,6 +731,97 @@ const CouncilMembersPage = () => {
       console.error('Vote failed:', error);
     }
   }
+
+  const handleReportVote = async (postId: string, username: string) => {
+    const selectedVote = reportVote[postId];
+    if (!activeSession) {
+      connectWallet();
+      return;
+    }
+
+    if (!reportVote) {
+      return;
+    }
+
+    try {
+      const action = {
+        account: 'snipvote',
+        name: 'reportvote',
+        authorization: [
+          {
+            actor: activeSession.auth.actor.toString(),
+            permission: activeSession.auth.permission.toString(),
+          },
+        ],
+        data: {
+          voter: activeSession.auth.actor.toString(),
+          postId: postId,
+          decision: selectedVote,
+        },
+      };
+
+      const result = await activeSession.transact(
+        {
+          actions: [action],
+        },
+        {
+          broadcast: true,
+        }
+      );
+      alert('Vote successfull on this report!');
+      await fetchReportVotes(postId, username);
+    } catch (error: any) {
+      console.error('Vote failed:', error);
+    }
+  }
+
+  const fetchReportVotes = async (postId: string, username: string) => {
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'reportvotes',
+        limit: 100,
+      });
+  
+      const filteredVotes = await result?.rows?.filter((r) => r.postId === postId);
+          
+      if (filteredVotes[0].restorationVotes >= 4) {
+        await updatePostStatus (postId, 'published', username);
+      } else if ( filteredVotes[0].deletionVotes >= 4 ) {
+        await updatePostStatus (postId, 'deleted', username);
+      }
+        
+    } catch (error) {
+      console.error('Failed to fetch reports:', error);
+    }
+  };
+
+  const updatePostStatus = async (postId: string, status: string, username: string) => {
+    try {
+      const res = await fetch('/api/tweets/status/update', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postId, status, username }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to update post');
+      }
+  
+      console.log('Post successfully updated');
+    } catch (error) {
+      console.error('Failed to update post:', error);
+    }
+  }
+
+  const theme = useTheme();
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -951,6 +1151,166 @@ const CouncilMembersPage = () => {
       </Paper>
     )}
     </Box>
+   }
+    
+    {/* Council Review Panel */}
+    {isMember &&
+    <>
+    <Typography variant="h6" gutterBottom>
+      Council Review Panel
+    </Typography>
+    {activeReports.map((elem: any) => (
+    <Card
+      key={elem.postId}
+      sx={{
+        mb: 3,
+        boxShadow: '0px 5px 20px rgba(0,0,0,0.08)',
+        borderRadius: 3,
+        overflow: 'hidden',
+        border: `1px solid ${theme.palette.divider}`,
+      }}
+    >
+      <CardContent sx={{ padding: 3 }}>
+        <Stack direction="row" alignItems="center" spacing={2} mb={2} justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Avatar sx={{ bgcolor: theme.palette.warning.light, color: theme.palette.warning.dark }}>
+              <FiAlertTriangle size={22} />
+            </Avatar>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 500 }}>
+               Report Details
+            </Typography>
+          </Stack>
+          <Button
+            variant="outlined"
+            color="primary"
+            size="small"
+            startIcon={<AiOutlineEye />}
+            sx={{ fontWeight: 500, borderRadius: 1 }}
+            onClick={() => {
+              router.push(`${elem.authorUsername}/tweets/${elem.postId}`)
+            }}
+          >
+            View Post
+          </Button>
+        </Stack>
+        <Typography
+          variant="subtitle2"
+          color="text.secondary"
+          gutterBottom
+          sx={{ fontWeight: 400, fontStyle: 'italic' }}
+        >
+          Reported by {elem.reportCount} moderator(s)
+        </Typography>
+
+        {elem.categories && elem.categories.length > 0 && (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'center' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, mr: 1 }}>
+              Categories:
+            </Typography>
+            {elem.categories.map((cat: string, i: number) => (
+              <Chip
+                key={i}
+                label={cat}
+                size="small"
+                variant="outlined"
+                color="primary"
+                sx={{ borderRadius: 1 }}
+              />
+            ))}
+          </Box>
+        )}
+
+        {elem.reasons && elem.reasons.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1 }}>
+              Reasons:
+            </Typography>
+            {elem.reasons.map((reason: string, i: number) => (
+              <Typography variant="body2" color="text.secondary" key={i} sx={{ ml: 1, lineHeight: 1.5 }}>
+                • {reason}
+              </Typography>
+            ))}
+          </Box>
+        )}
+
+        <Divider sx={{ my: 2, opacity: 0.6 }} />
+        
+        {
+        elem.appeal &&
+        <>
+        <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 1, color: theme.palette.text.secondary }}>
+          User Appeal
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5, mb: 2 }}>
+        {elem.appeal}
+        </Typography>
+
+        <Divider sx={{ my: 2, opacity: 0.6 }} />
+        </>
+        }
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: theme.palette.success.main }}>
+            <AiOutlineCheckCircle size={20} style={{ marginRight: 6 }} />
+            <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+              Restore:
+            </Typography>
+            <Typography variant="body2" sx={{ ml: 0.5, color: theme.palette.text.secondary }}>
+              ({elem.restorationVotes})
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: theme.palette.error.main }}>
+            <AiOutlineCloseCircle size={20} style={{ marginRight: 6 }} />
+            <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+              Delete:
+            </Typography>
+            <Typography variant="body2" sx={{ ml: 0.5, color: theme.palette.text.secondary }}>
+              ({elem.deletionVotes})
+            </Typography>
+          </Box>
+        </Box>
+
+        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500, mt: 2, color: theme.palette.text.secondary }}>
+          Your Action
+        </Typography>
+
+        <RadioGroup
+          aria-label="post-vote"
+          name={`postVote-${elem.postId}`}
+          value={reportVote[elem.postId] || ''}
+          onChange={(e) => {
+            const value = e.target.value;
+            setReportVote((prev) => ({ ...prev, [elem.postId]: value }));
+          }}
+          sx={{ mb: 2 }}
+        >
+          <FormControlLabel
+            value="restore"
+            control={<Radio icon={<AiOutlineCheckCircle size={20} />} checkedIcon={<AiOutlineCheckCircle size={20} color={theme.palette.success.main} />} />}
+            label={<Typography sx={{ fontWeight: 400 }}>Restore</Typography>}
+          />
+          <FormControlLabel
+            value="delete"
+            control={<Radio icon={<AiOutlineCloseCircle size={20} />} checkedIcon={<AiOutlineCloseCircle size={20} color={theme.palette.error.main} />} />}
+            label={<Typography sx={{ fontWeight: 400 }}>Delete</Typography>}
+          />
+        </RadioGroup>
+
+        <Button
+          variant="outlined"
+          color="primary"
+          disabled={!reportVote[elem.postId]}
+          fullWidth
+          onClick={() => handleReportVote(elem.postId, elem.authorUsername)}
+          startIcon={<AiOutlineSend />}
+          sx={{ fontWeight: 500, py: 1.2, borderRadius: 1 }}
+        >
+          Submit Vote
+        </Button>
+      </CardContent>
+    </Card>
+    ))}
+    </>
    }
 
 

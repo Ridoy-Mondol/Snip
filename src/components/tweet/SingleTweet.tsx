@@ -299,28 +299,28 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
             <div className={`single-tweet tweet ${tweet.isReply && "reply"}`}>
                 <div className="single-tweet-author-section">
                     <div>
-                        <Link className="tweet-avatar" href={`/${tweet.author.username}`}>
+                        <Link className="tweet-avatar" href={`/${tweet?.author?.username}`}>
                             <Avatar
                                 className="avatar"
                                 sx={{ width: 50, height: 50 }}
                                 alt=""
-                                src={tweet.author.photoUrl ? getFullURL(tweet.author.photoUrl) : "/assets/egg.jpg"}
+                                src={tweet?.author?.photoUrl ? getFullURL(tweet.author.photoUrl) : "/assets/egg.jpg"}
                             />
                         </Link>
                     </div>
                     <div className="tweet-author-section">
-                        <Link className="tweet-author-link" href={`/${tweet.author.username}`}>
+                        <Link className="tweet-author-link" href={`/${tweet?.author?.username}`}>
                             <span className="tweet-author">
-                                {tweet.author.name !== "" ? tweet.author.name : tweet.author.username}
-                                {tweet.author.isPremium && (
+                                {tweet?.author?.name !== "" ? tweet?.author?.name : tweet?.author?.username}
+                                {tweet?.author?.isPremium && (
                                     <span className="blue-tick" data-blue="Verified Blue">
                                         <AiFillTwitterCircle />
                                     </span>
                                 )}
                             </span>
-                            <span className="text-muted">@{tweet.author.username}</span>
+                            <span className="text-muted">@{tweet?.author?.username}</span>
                         </Link>
-                        {token && token.username === tweet.author.username && (
+                        {token && token.username === tweet?.author?.username && (
                             <>
                                 <button className="three-dots icon-hoverable" onClick={handleAnchorClick}>
                                     <RxDotsHorizontal />
@@ -330,13 +330,13 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                                         Delete
                                     </MenuItem>
                                     {
-                                    !tweet.isPoll &&
+                                    !tweet?.isPoll &&
                                     <MenuItem className="delete" onClick={()=> setIsUpdateOpen(true)}>
                                         Update
                                     </MenuItem>       
                                 }
                                 {
-                                tweet.status === "draft" &&
+                                tweet?.status === "draft" &&
                                 <MenuItem className="delete"  onClick={()=> setOpenModal(true)}>
                                     Publish
                                 </MenuItem>
@@ -348,7 +348,7 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                 </div>
                 <div className="tweet-main">
                     <div className="tweet-text">
-                        {tweet.isReply && (
+                        {tweet?.isReply && (
                             <Link href={`/${tweet?.repliedTo?.author.username}`} className="reply-to">
                                 <span className="mention">@{tweet?.repliedTo?.author.username}</span>
                             </Link>
@@ -479,16 +479,16 @@ export default function SingleTweet({ tweet, token }: { tweet: TweetProps; token
                     <Counters tweet={tweet} />
                     <div className="tweet-bottom">
                         <Reply tweet={tweet} />
-                        <Retweet tweetId={tweet.id} tweetAuthor={tweet.author.username} />
-                        <Like tweetId={tweet.id} tweetAuthor={tweet.author.username} />
+                        <Retweet tweetId={tweet?.id} tweetAuthor={tweet?.author?.username} />
+                        <Like tweetId={tweet?.id} tweetAuthor={tweet?.author?.username} />
                         <Share
-                            tweetUrl={`https://${window.location.hostname}/${tweet.author.username}/tweets/${tweet.id}`}
+                            tweetUrl={`https://${window.location.hostname}/${tweet?.author?.username}/tweets/${tweet?.id}`}
                         />
                     </div>
                 </div>
             </div>
             {token && <NewReply token={token} tweet={tweet} />}
-            {tweet.replies.length > 0 && <Replies tweetId={tweet.id} tweetAuthor={tweet.author.username} />}
+            {tweet?.replies?.length > 0 && <Replies tweetId={tweet?.id} tweetAuthor={tweet?.author?.username} />}
             {snackbar.open && (
                 <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
             )}

@@ -41,7 +41,7 @@ export default function HiddenPage() {
     if (!token?.id) return;
     const fetchHiddenPosts = async () => {
       try {
-        const res = await fetch("/api/tweets/hidden/get", {
+        const res = await fetch("/api/tweets/status/get", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useRouter } from "next/navigation";
 import { JsonRpc } from 'eosjs';
 import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
+import { ApiClass } from '@proton/api';
 import {
   Container,
   Typography,
@@ -28,7 +29,7 @@ import {
   Stack,
   Divider,
   useTheme,
-  RadioGroup, FormControlLabel, Radio, Chip
+  RadioGroup, FormControlLabel, Radio, Chip, FormControl, InputLabel, MenuItem, Select
 } from '@mui/material';
 import {
   FaUserCircle,
@@ -51,6 +52,7 @@ import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import { TweetProps } from "@/types/TweetProps";
 import { AuthContext } from "@/context/AuthContext";
+import Rewards from "@/components/council/Rewards";
 
 
 function TabPanel(props: any) {
@@ -102,8 +104,11 @@ const CouncilMembersPage = () => {
   const [recallTab, setRecallTab] = useState(0);
   const [activeReports, setActiveReports] = useState<any>([]);
   const [reportVote, setReportVote] = useState<Record<string, "restore" | "delete">>({});
-  const [hiddenPosts, setHiddenPosts] = useState<TweetProps[]>([]);
-
+  const [fundForm, setFundForm] = useState(false);
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState<number>();
+  const [memo, setMemo] = useState("");
+  const [category, setCategory] = useState("");
 
   const permission =
     activeSession?.auth?.actor?.toString() === "snipvote" ||
@@ -113,6 +118,9 @@ const CouncilMembersPage = () => {
   const router = useRouter();
   const now = Math.floor(Date.now() / 1000);
   const { token } = useContext(AuthContext);
+  
+  // let protonApi = new ApiClass('proton');
+  // console.log('proton', protonApi);
 
   useEffect(() => {
     const restore = async () => {
@@ -821,6 +829,77 @@ const CouncilMembersPage = () => {
     }
   }
 
+  const fetchToken = async () => {
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipx',
+        scope: 'snipx',
+        table: 'accounts',
+      });
+  
+      console.log('token from table', result.rows);
+
+      const balanceStr = result?.rows?.[0]?.balance;
+      if (!balanceStr) return null;
+
+      const [amountStr] = balanceStr.split(' ');
+      const amount = parseFloat(amountStr);
+      return amount;
+        
+    } catch (error) {
+      console.error('Failed to fetch reports:', error);
+    }
+  };
+
+  const submitProposal = async () => {
+    const availablebalance = await fetchToken();
+    if (!availablebalance) {
+      alert('The community wallet has no balance.');
+      return;
+    }
+
+    if (!activeSession) {
+      connectWallet();
+      return;
+    }
+
+    try {
+      const action = {
+        account: 'snipvote',
+        name: 'createfprop',
+        authorization: [
+          {
+            actor: activeSession.auth.actor.toString(),
+            permission: activeSession.auth.permission.toString(),
+          },
+        ],
+        data: {
+          proposer: activeSession.auth.actor.toString(),
+          recipient: recipient,
+          amount: Math.round(amount! * 10000),
+          available: Math.round(availablebalance * 10000),
+          memo: memo,
+          category: category
+        },
+      };
+
+      const result = await activeSession.transact(
+        {
+          actions: [action],
+        },
+        {
+          broadcast: true,
+        }
+      );
+      setFundForm(false);
+      alert('Proposal submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting proposal:', error);
+    }
+  };
+
   const theme = useTheme();
 
   return (
@@ -1314,7 +1393,16 @@ const CouncilMembersPage = () => {
    }
 
 
-
+   {/* Rewards */}
+   {
+   isMember &&
+   <Rewards 
+     setFundForm={setFundForm} 
+     activeSession= {activeSession}
+     activeLink= {activeLink}
+     connectWallet={connectWallet} 
+   />
+   }
 
 
 
@@ -1364,6 +1452,65 @@ const CouncilMembersPage = () => {
         <DialogActions>
           <Button onClick={() => setShowRecallForm(false)}>Cancel</Button>
           <Button color="secondary" onClick={recalledMember ? handleRecall : handleModRecall}>
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
+      {/* Fund Prposal Dialog */}
+      <Dialog open={fundForm} onClose={() => setFundForm(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Propose Fund Allocation</DialogTitle>
+              
+        <DialogContent>
+        <Stack spacing={2} mt={1}>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Recipient Account"
+            fullWidth
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+          />
+
+          <TextField
+            margin="dense"
+            label="Amount"
+            fullWidth
+            value={amount}
+            type='number'
+            onChange={(e) => setAmount(Number(e.target.value))}
+          />
+
+          <TextField
+            margin="dense"
+            label="Memo"
+            fullWidth
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+          />
+
+          <FormControl fullWidth margin="dense">
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                label="Category"
+              >
+              <MenuItem value="rewards">Rewards</MenuItem>
+              <MenuItem value="development">Development</MenuItem>
+              <MenuItem value="marketing">Marketing</MenuItem>
+              <MenuItem value="operations">Operations</MenuItem>
+              </Select>
+          </FormControl>
+          
+          
+        </Stack>
+        </DialogContent>
+      
+        <DialogActions>
+          <Button onClick={() => setFundForm(false)}>Cancel</Button>
+          <Button color="secondary" disabled={!recipient || !amount || !memo || !category} onClick={submitProposal}>
             Submit
           </Button>
         </DialogActions>

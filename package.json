@@ -33,6 +33,7 @@
         "@mui/material": "^5.17.1",
         "@mui/x-date-pickers": "^7.28.3",
         "@prisma/client": "^4.14.1",
+        "@proton/api": "^28.8.3",
         "@proton/web-sdk": "^4.2.19",
         "@react-spring/web": "^9.7.5",
         "@supabase/auth-helpers-nextjs": "^0.10.0",

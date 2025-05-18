@@ -3,7 +3,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useRouter } from "next/navigation";
 import { JsonRpc } from 'eosjs';
 import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
-import { ApiClass } from '@proton/api';
 import {
   Container,
   Typography,
@@ -53,6 +52,7 @@ import { getFullURL } from "@/utilities/misc/getFullURL";
 import { TweetProps } from "@/types/TweetProps";
 import { AuthContext } from "@/context/AuthContext";
 import Rewards from "@/components/council/Rewards";
+import RevenueForm from "@/components/form/Revenue";
 
 
 function TabPanel(props: any) {
@@ -104,16 +104,19 @@ const CouncilMembersPage = () => {
   const [recallTab, setRecallTab] = useState(0);
   const [activeReports, setActiveReports] = useState<any>([]);
   const [reportVote, setReportVote] = useState<Record<string, "restore" | "delete">>({});
+  const [wallet, setWallet] = useState("");
   const [fundForm, setFundForm] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState<number>();
   const [memo, setMemo] = useState("");
   const [category, setCategory] = useState("");
+  const [revenueForm, setRevenueForm] = useState(false);
 
   const permission =
     activeSession?.auth?.actor?.toString() === "snipvote" ||
     activeSession?.auth?.actor?.toString() === "ahatashamul" ||
-    activeSession?.auth?.actor?.toString() === "ahatashamul5";
+    activeSession?.auth?.actor?.toString() === "ahatashamul5" ||
+    activeSession?.auth?.actor?.toString() === "ahatashamul2";
   
   const router = useRouter();
   const now = Math.floor(Date.now() / 1000);
@@ -829,13 +832,36 @@ const CouncilMembersPage = () => {
     }
   }
 
+  const fetchWallet = async () => {
+    try {
+    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'fundconfig',
+    });
+    
+    const account = result?.rows?.[0]?.communityWallet;
+    if (!account) return null;
+    setWallet(account);
+  
+    } catch (error) {
+    console.error('Failed to fetch community wallet:', error);
+    }
+  };
+  
+  useEffect (() => {
+    fetchWallet();
+  }, []);
+
   const fetchToken = async () => {
     try {
       const rpc = new JsonRpc('https://tn1.protonnz.com');
       const result = await rpc.get_table_rows({
         json: true,
         code: 'snipx',
-        scope: 'snipx',
+        scope: wallet,
         table: 'accounts',
       });
   
@@ -917,6 +943,10 @@ const CouncilMembersPage = () => {
 
       {
         (permission && recallData) && <Button onClick={declareRecall}>Declare Recall</Button>
+      }
+
+      {
+        permission && <Button onClick={() => setRevenueForm(true)}>Share Revenue</Button>
       }
 
       {
@@ -1515,6 +1545,17 @@ const CouncilMembersPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Revenue form */}
+      <RevenueForm
+        open={revenueForm}
+        onClose={() => setRevenueForm(false)}
+        activeSession= {activeSession}
+        connectWallet={connectWallet}
+        fetchToken={fetchToken}
+      />
+
+
 
 
 

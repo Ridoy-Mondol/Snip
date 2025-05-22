@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect, useContext } from 'react';
 import { JsonRpc } from 'eosjs';
+import { useRouter } from "next/navigation";
 import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
 import {
   Container,
@@ -60,6 +61,7 @@ const ModeratorPage = () => {
 
   const { token } = useContext(AuthContext);
   const now = Math.floor(Date.now() / 1000);
+  const router = useRouter();
 
   useEffect(() => {
     const restore = async () => {
@@ -353,7 +355,7 @@ const ModeratorPage = () => {
                   {new Date(moderator.approvedAt * 1000).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Button size="small" variant="outlined" startIcon={<FaCaretRight />}>
+                    <Button size="small" variant="outlined" startIcon={<FaCaretRight />} onClick={() => router.push(`/dao/moderators/${moderator.account}`)}>
                       Visit
                     </Button>
                     </TableCell>

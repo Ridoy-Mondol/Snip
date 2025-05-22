@@ -160,7 +160,7 @@ export default function RevenueDashboard() {
                     paddingAngle={2}
                     stroke="transparent"
                     dataKey="revenueDistributed"
-                    label
+                    label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
                   >
                     {currentYearRevenue.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

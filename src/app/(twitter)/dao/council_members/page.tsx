@@ -49,7 +49,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
-import { TweetProps } from "@/types/TweetProps";
 import { AuthContext } from "@/context/AuthContext";
 import Rewards from "@/components/council/Rewards";
 import RevenueForm from "@/components/form/Revenue";
@@ -291,7 +290,7 @@ const CouncilMembersPage = () => {
       setMembers(membersWithPhotos);
 
     } catch (error) {
-      console.error('Failed to fetch election:', error);
+      console.error('Failed to fetch member:', error);
     }
   };
 
@@ -985,7 +984,7 @@ const CouncilMembersPage = () => {
                     {member.isFoundingMember ? "Founder" : "Elected"}
                   </TableCell>
                   <TableCell>
-                    <Button size="small" variant="outlined" startIcon={<FaCaretRight />}>
+                    <Button size="small" variant="outlined" startIcon={<FaCaretRight />} onClick={() => router.push(`/dao/council_members/${member.winner}`)}>
                       Visit
                     </Button>
                     </TableCell>
@@ -1053,7 +1052,7 @@ const CouncilMembersPage = () => {
                           </TableCell>
                           <TableCell>{new Date(moderator.approvedAt * 1000).toLocaleDateString()}</TableCell>
                           <TableCell>
-                            <Button size="small" variant="outlined" startIcon={<FaCaretRight />}>
+                            <Button size="small" variant="outlined" startIcon={<FaCaretRight />} onClick={() => router.push(`/dao/moderators/${moderator.account}`)}>
                               VISIT
                             </Button>
                           </TableCell>

@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { JsonRpc } from 'eosjs';
-import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
 import {
   Box,
   Typography,
@@ -38,10 +37,11 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 
 import { AuthContext } from "@/context/AuthContext";
+import { useWallet } from "@/context/WalletContext";
+import CustomSnackbar from "@/components/misc/CustomSnackbar";
+import { SnackbarProps } from "@/types/SnackbarProps";
 
 export default function ProposalPage() {
-  const [activeSession, setActiveSession] = useState<any>(null);
-  const [activeLink, setActiveLink] = useState<Link | ProtonWebLink>();
   const [tab, setTab] = useState<'active' | 'past'>('active');
   const [isPropDialogOpen, setIsPropDialogOpen] = useState(false);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
@@ -53,80 +53,32 @@ export default function ProposalPage() {
   const [voterStake, setVoterStake] = useState('');
   const [activeProposals, setActiveProposals] = useState<any>([]);
   const [pastProposals, setPastProposals] = useState<any>([]);
+  const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
   const { token } = useContext(AuthContext);
   const now = Math.floor(Date.now() / 1000);
   const router = useRouter();
-
+  
+  const { activeSession, connectWallet } = useWallet();
   const permission =
     activeSession?.auth?.actor?.toString() === "snipvote" ||
     activeSession?.auth?.actor?.toString() === "ahatashamul" ||
     activeSession?.auth?.actor?.toString() === "ahatashamul5";
 
   useEffect(() => {
-      const restore = async () => {
-      try {
-          const { link, session } = await ProtonWebSDK({
-          linkOptions: {
-              chainId: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
-              endpoints: ['https://tn1.protonnz.com'],
-              restoreSession: true,
-          },
-          transportOptions: {
-              requestAccount: 'snipvote',
-          },
-          selectorOptions: {
-              appName: 'Snipverse',
-          },
-          });
-        
-          if (session && link) {
-          setActiveSession(session);
-          setActiveLink(link);
-          } else {
-          console.log('ℹ️ No session found or session invalid.');
-          }
-      } catch (error) {
-          console.error('❌ Error during session restoration:', error);
-      }
-      };
-      
-      fetchProposals();
-      restore();
+    fetchProposals();
   }, []);
-      
-  const connectWallet = async () => {
-      try {
-      const { link, session } = await ProtonWebSDK({
-          linkOptions: {
-          endpoints: ["https://tn1.protonnz.com"],
-          chainId: "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd",
-          restoreSession: false,
-          },
-          transportOptions: {
-          requestAccount: "snipvote",
-          },
-          selectorOptions: {
-          appName: "Snipverse",
-          },
-      });
-      
-      if (session) {
-          setActiveSession(session);
-          setActiveLink(link);
-      }
-      } catch (error) {
-      console.error("Wallet connection failed:", error);
-      }
-  };
+
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
 
   const fetchProposals = async () => {
       try {
-        const rpc = new JsonRpc('https://tn1.protonnz.com');
+        const rpc = new JsonRpc(endpoint);
         const result = await rpc.get_table_rows({
           json: true,
-          code: 'snipvote',
-          scope: 'snipvote',
+          code: contractAcc,
+          scope: contractAcc,
           table: 'proposals',
           limit: 100,
         });
@@ -142,24 +94,45 @@ export default function ProposalPage() {
 
   const submitProposal = async () => {
     if (!activeSession) {
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: "error",
+        open: true,
+      });
       connectWallet();
       return;
     }
 
     if (!newTitle.trim()) {
-      alert('Title cannot be empty.');
+      setSnackbar({
+        message: 'Title cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newCategory.trim()) {
-      alert('Category cannot be empty.');
+      setSnackbar({
+        message: 'Category cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newDescription.trim()) {
-      alert('Description cannot be empty.');
+      setSnackbar({
+        message: 'Description cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newDeadline.trim()) {
-      alert('Deadline cannot be empty.');
+      setSnackbar({
+        message: 'Deadline cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     
@@ -167,7 +140,7 @@ export default function ProposalPage() {
       const deadlineUTC = new Date(newDeadline);
       const deadlineSec = Math.floor(deadlineUTC.getTime() / 1000);
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'submitprop',
         authorization: [
           {
@@ -194,7 +167,11 @@ export default function ProposalPage() {
         }
       );
 
-      alert('Proposal created successfully!');
+      setSnackbar({
+        message: 'Proposal created successfully!',
+        severity: "success",
+        open: true,
+      });
       setIsPropDialogOpen(false);
       fetchProposals();    
     } catch (error: any) {
@@ -204,7 +181,12 @@ export default function ProposalPage() {
 
   const updateConfig = async () => {
     if (!activeSession) {
-      connectWallet();
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: "error",
+        open: true,
+      });
+      connectWallet();  
       return;
     }
     
@@ -212,7 +194,7 @@ export default function ProposalPage() {
       const deadlineUTC = new Date(newDeadline);
       const deadlineSec = Math.floor(deadlineUTC.getTime() / 1000);
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'updateconfig',
         authorization: [
           {
@@ -236,7 +218,11 @@ export default function ProposalPage() {
         }
       );
 
-      alert('Proposal Configuration Updated Successfully!');
+      setSnackbar({
+        message: 'Proposal Configuration Updated Successfully!',
+        severity: "success",
+        open: true,
+      });
       setIsConfigDialogOpen(false);
     } catch (error: any) {
       console.error('Config creation failed:', error);
@@ -245,13 +231,18 @@ export default function ProposalPage() {
 
   const handleCloseProposals = async () => {
     if (!activeSession) {
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: "error",
+        open: true,
+      });
       connectWallet();
       return;
     }
     
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'closeprop',
         authorization: [
           {
@@ -273,7 +264,11 @@ export default function ProposalPage() {
         }
       );
 
-      alert('Proposal Closed Successfully!');
+      setSnackbar({
+        message: 'Proposal Closed Successfully!',
+        severity: "success",
+        open: true,
+      });
       setIsConfigDialogOpen(false);
     } catch (error: any) {
       console.error('Failed to close proposals:', error);
@@ -435,6 +430,10 @@ export default function ProposalPage() {
           )}
       </Grid>
     </Box>
+
+    {snackbar.open && (
+      <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
+    )}
  
     {/* Create Proposal Dialog */}
     <Dialog open={isPropDialogOpen} onClose={() => setIsPropDialogOpen (false)} fullWidth maxWidth="sm" sx={{p: 2}}>

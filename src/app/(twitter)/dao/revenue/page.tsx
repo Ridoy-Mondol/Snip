@@ -28,13 +28,16 @@ const COLORS = [
 export default function RevenueDashboard() {
   const [revenue, setRevenue] = useState<RevenueRecord[]>([]);
 
+   const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+   const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;  
+
    const fetchRevenue = async () => {
      try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
       json: true,
-      code: 'snipvote',
-      scope: 'snipvote',
+      code: contractAcc,
+      scope: contractAcc,
       table: 'revenues',
       });
 

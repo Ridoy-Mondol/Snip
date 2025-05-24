@@ -19,15 +19,16 @@ import {
 } from '@mui/material';
 import { FaRegCalendarAlt, FaUserFriends, FaVoteYea, FaUserTie, FaRegClock, FaBalanceScaleLeft } from 'react-icons/fa';
 import { MdHowToVote } from 'react-icons/md';
-import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
 import { JsonRpc } from 'eosjs';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 
+import { useWallet } from "@/context/WalletContext";
+import CustomSnackbar from "@/components/misc/CustomSnackbar";
+import { SnackbarProps } from "@/types/SnackbarProps";
+
 const Election = () => {
-  const [activeSession, setActiveSession] = useState<any>(null);
-  const [activeLink, setActiveLink] = useState<Link | ProtonWebLink>();
   const [elections, setElections] = useState<any[]>([]);
   const [recallData, setRecallData] = useState<any[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -40,93 +41,21 @@ const Election = () => {
   const [newVoterStake, setNewVoterStake] = useState('');
   const [tab, setTab] = useState<number>(0);
   const [recallTab, setRecallTab] = useState<number>(0);
+  const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
   const router = useRouter();
+  const { activeSession, connectWallet } = useWallet();
 
-  useEffect(() => {
-    const restore = async () => {
-      try {
-        const { link, session } = await ProtonWebSDK({
-          linkOptions: {
-            chainId: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
-            endpoints: ['https://tn1.protonnz.com'],
-            restoreSession: true,
-          },
-          transportOptions: {
-            requestAccount: 'snipvote',
-          },
-          selectorOptions: {
-            appName: 'Snipverse',
-          },
-        });
-  
-        if (session && link) {
-          console.log('✅ Restored session:', session.auth.actor);
-          setActiveSession(session);
-          setActiveLink(link);
-        } else {
-          console.log('ℹ️ No session found or session invalid.');
-        }
-      } catch (error) {
-        console.error('❌ Error during session restoration:', error);
-      }
-    };
-  
-    restore();
-    fetchElections();
-    fetchRecallElections();
-  }, []);
-
-  const connectWallet = async () => {
-    try {
-      const { link, session } = await ProtonWebSDK({
-        linkOptions: {
-          endpoints: ["https://tn1.protonnz.com"],
-          chainId: "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd",
-          restoreSession: false,
-        },
-        transportOptions: {
-          requestAccount: "snipvote",
-        },
-        selectorOptions: {
-          appName: "Snipverse",
-        },
-      });
-
-      if (session) {
-        console.log("Connected with account:", session.auth.actor);
-        setActiveSession(session);
-        setActiveLink(link);
-      }
-    } catch (error) {
-      console.error("Wallet connection failed:", error);
-    }
-  };
-
-  const disconnectWallet = async () => {
-    if (activeLink) {
-      try {
-        await activeLink.removeSession("Snipverse", activeSession.auth.actor, "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd");
-        setActiveSession(null);
-        setActiveLink(undefined);
-        console.log("Wallet disconnected.");
-        alert("Wallet disconnected.");
-      } catch (error) {
-        console.error("Error disconnecting wallet:", error);
-        alert("Error disconnecting wallet: " + (error || "Unknown error"));
-      }
-    } else {
-      alert("No wallet connected to disconnect.");
-    }
-  };
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
 
   const fetchElections = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'elections',
         limit: 100,
       });
@@ -139,11 +68,11 @@ const Election = () => {
 
   const fetchRecallElections = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'recallvotes',
         limit: 100,
       });
@@ -153,6 +82,11 @@ const Election = () => {
       console.error('Failed to fetch elections:', error);
     }
   };
+
+  useEffect(() => {
+    fetchElections();
+    fetchRecallElections();
+  }, []);
 
   const openCreateDialog = () => {
     setIsCreateDialogOpen(true);
@@ -175,37 +109,69 @@ const Election = () => {
 
   const handleCreateElection = async () => {
     if (!activeSession) {
-      alert('Please connect wallet first');
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: "error",
+        open: true,
+      });
       connectWallet();
       return;
     }
 
     if (!newElectionName.trim()) {
-      alert('Election Name cannot be empty.');
+      setSnackbar({
+        message: 'Election Name cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newRegistrationStartTime.trim()) {
-      alert('Registration Start Time cannot be empty.');
+      setSnackbar({
+        message: 'Registration Start Time cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newRegistrationEndTime.trim()) {
-      alert('Registration End Time cannot be empty.');
+      setSnackbar({
+        message: 'Registration End Time cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newStartTime.trim()) {
-      alert('Voting Start Time cannot be empty.');
+      setSnackbar({
+        message: 'Voting Start Time cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newEndTime.trim()) {
-      alert('Voting End Time cannot be empty.');
+      setSnackbar({
+        message: 'Voting End Time cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newCandidateStake.trim()) {
-      alert('Candidate Stake Amount cannot be empty.');
+      setSnackbar({
+        message: 'Candidate Stake Amount cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
     if (!newVoterStake.trim()) {
-      alert('Voter Stake Amount cannot be empty.');
+      setSnackbar({
+        message: 'Voter Stake Amount cannot be empty.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
 
@@ -223,7 +189,7 @@ const Election = () => {
       const endTimeSec = Math.floor(endUTC.getTime() / 1000);
 
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'createelect',
         authorization: [
           {
@@ -251,8 +217,11 @@ const Election = () => {
         }
       );
 
-      console.log('Election created successfully:', result);
-      alert('Election created successfully!');
+      setSnackbar({
+        message: 'Election created successfully!',
+        severity: "success",
+        open: true,
+      });
       closeCreateDialog();
       fetchElections();
     } catch (error: any) {
@@ -371,9 +340,21 @@ const Election = () => {
 
     if (data.length === 0) {
       return (
-        <Typography variant="body1" color="text.secondary" mt={2}>
-          {emptyMessage}
-        </Typography>
+        <Grid item xs={12}>
+          <Box
+            sx={{
+              textAlign: 'center',
+              mt: 4,
+              p: 3,
+              border: '1px dashed #ccc',
+              borderRadius: 2,
+            }}
+          >
+            <Typography variant="h6" color="text.secondary">
+              {emptyMessage}
+            </Typography>
+          </Box>
+        </Grid>
       );
     }
 
@@ -442,28 +423,18 @@ const Election = () => {
 
   return (
     <Container maxWidth="md" style={{ marginTop: '20px' }}>
-      <Typography variant="h4" component="h2" gutterBottom>
-        Elections
+      <Typography variant="h4" align="left" fontWeight={600} gutterBottom>
+        <Box component="span" sx={{ verticalAlign: "middle", mr: 1 }}>
+          <MdHowToVote />
+        </Box>
+         DAO Council Elections
       </Typography>
 
-      {!activeSession ? (
-        <Button variant="contained" color="primary" onClick={connectWallet}>
-          Connect Wallet
-        </Button>
-      ) : (
-        <div>
-          <Typography variant="subtitle1" gutterBottom>
-            Connected as: {activeSession.auth.actor}
-          </Typography>
-          <Button variant="outlined" onClick={disconnectWallet} style={{ marginBottom: '10px' }}>
-            Disconnect Wallet
-          </Button>
-        </div>
-      )}
+      <Typography variant="body1" color="textSecondary" sx={{ mt: 1, mb: 3 }}>
+        Participate in shaping the future of our decentralized community by voting in the latest DAO Council elections.
+        Elect leaders who represent your interests and help guide the protocol's strategic direction.
+      </Typography>
 
-      <Button variant="outlined" color="primary" onClick={fetchElections} style={{ marginBottom: '10px', marginRight: '10px' }}>
-        Refresh Elections
-      </Button>
       {activeSession && (
         <Button variant="contained" color="secondary" onClick={openCreateDialog} style={{ marginBottom: '10px' }}>
           Create New Election
@@ -485,9 +456,19 @@ const Election = () => {
         <Grid container spacing={2}>
           {activeElections.length === 0 ? (
             <Grid item xs={12}>
-              <Typography variant="body1" color="textSecondary">
-                No active elections at the moment.
-              </Typography>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  mt: 4,
+                  p: 3,
+                  border: '1px dashed #ccc',
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="h6" color="text.secondary">
+                  No active elections at the moment.
+                </Typography>
+              </Box>
             </Grid>
           ) : (
             activeElections.map((e) => renderElectionCard(e))
@@ -500,9 +481,19 @@ const Election = () => {
         <Grid container spacing={2}>
           {pastElections.length === 0 ? (
             <Grid item xs={12}>
-              <Typography variant="body1" color="textSecondary">
-                No past elections recorded.
-              </Typography>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  mt: 4,
+                  p: 3,
+                  border: '1px dashed #ccc',
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="h6" color="text.secondary">
+                  No past elections recorded.
+                </Typography>
+              </Box>
             </Grid>
           ) : (
             pastElections.map((e) => renderElectionCard(e, true))
@@ -525,72 +516,76 @@ const Election = () => {
       {recallTab === 0 ? renderRecallCards(activeRecalls, 'No active recall elections at the moment.') : renderRecallCards(pastRecalls, 'No past recall elections recorded.')}
     </Box>
 
-      {/* Create Election Dialog */}
-      <Dialog open={isCreateDialogOpen} onClose={closeCreateDialog} fullWidth maxWidth="sm">
-        <DialogTitle>Create New Election</DialogTitle>
+    {snackbar.open && (
+      <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
+    )}
+
+    {/* Create Election Dialog */}
+    <Dialog open={isCreateDialogOpen} onClose={closeCreateDialog} fullWidth maxWidth="sm">
+      <DialogTitle>Create New Election</DialogTitle>
         
-       <DialogContent>
-        <Stack spacing={2} mt={1}>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Election Name"
-            fullWidth
-            value={newElectionName}
-            onChange={(e) => setNewElectionName(e.target.value)}
+      <DialogContent>
+      <Stack spacing={2} mt={1}>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Election Name"
+          fullWidth
+          value={newElectionName}
+          onChange={(e) => setNewElectionName(e.target.value)}
+        />
+
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DateTimePicker
+            label="Registration Start Time (UTC)"
+            value={newRegistrationStartTime ? new Date(newRegistrationStartTime) : null}
+            onChange={(value) => setNewRegistrationStartTime(value?.toISOString() ?? "")}
+          />
+          <DateTimePicker
+            label="Registration End Time (UTC)"
+            value={newRegistrationEndTime ? new Date(newRegistrationEndTime) : null}
+            onChange={(value) => setNewRegistrationEndTime(value?.toISOString() ?? "")}
           />
 
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DateTimePicker
-              label="Registration Start Time (UTC)"
-              value={newRegistrationStartTime ? new Date(newRegistrationStartTime) : null}
-              onChange={(value) => setNewRegistrationStartTime(value?.toISOString() ?? "")}
-            />
-            <DateTimePicker
-              label="Registration End Time (UTC)"
-              value={newRegistrationEndTime ? new Date(newRegistrationEndTime) : null}
-              onChange={(value) => setNewRegistrationEndTime(value?.toISOString() ?? "")}
-            />
-
-            <DateTimePicker
-              label="Voting Start Time (UTC)"
-              value={newStartTime ? new Date(newStartTime) : null}
-              onChange={(value) => setNewStartTime(value?.toISOString() ?? "")}
-            />
-
-            <DateTimePicker
-              label="Voting End Time (UTC)"
-              value={newEndTime ? new Date(newEndTime) : null}
-              onChange={(value) => setNewEndTime(value?.toISOString() ?? "")}
-            />
-          </LocalizationProvider>
-
-          <TextField
-            margin="dense"
-            label="Candidate Stake Amount"
-            fullWidth
-            type="number"
-            value={newCandidateStake}
-            onChange={(e) => setNewCandidateStake(e.target.value)}
+          <DateTimePicker
+            label="Voting Start Time (UTC)"
+            value={newStartTime ? new Date(newStartTime) : null}
+            onChange={(value) => setNewStartTime(value?.toISOString() ?? "")}
           />
-          <TextField
-            margin="dense"
-            label="Voter Stake Amount"
-            fullWidth
-            type="number"
-            value={newVoterStake}
-            onChange={(e) => setNewVoterStake(e.target.value)}
-          />
-        </Stack>
-       </DialogContent>
 
-        <DialogActions>
-          <Button onClick={closeCreateDialog}>Cancel</Button>
-          <Button onClick={handleCreateElection} color="secondary">
-            Create Election
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <DateTimePicker
+            label="Voting End Time (UTC)"
+            value={newEndTime ? new Date(newEndTime) : null}
+            onChange={(value) => setNewEndTime(value?.toISOString() ?? "")}
+          />
+        </LocalizationProvider>
+
+        <TextField
+          margin="dense"
+          label="Candidate Stake Amount"
+          fullWidth
+          type="number"
+          value={newCandidateStake}
+          onChange={(e) => setNewCandidateStake(e.target.value)}
+        />
+        <TextField
+          margin="dense"
+          label="Voter Stake Amount"
+          fullWidth
+          type="number"
+          value={newVoterStake}
+          onChange={(e) => setNewVoterStake(e.target.value)}
+        />
+      </Stack>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={closeCreateDialog}>Cancel</Button>
+        <Button onClick={handleCreateElection} color="secondary">
+          Create Election
+        </Button>
+      </DialogActions>
+    </Dialog>
     </Container>
   );
 };

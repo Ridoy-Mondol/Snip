@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useRouter } from "next/navigation";
 import { JsonRpc } from 'eosjs';
-import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
 import {
   Container,
   Typography,
@@ -50,6 +49,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import { AuthContext } from "@/context/AuthContext";
+import { useWallet } from "@/context/WalletContext";
 import Rewards from "@/components/council/Rewards";
 import RevenueForm from "@/components/form/Revenue";
 
@@ -82,8 +82,6 @@ function a11yProps(index: number) {
 }
 
 const CouncilMembersPage = () => {
-  const [activeSession, setActiveSession] = useState<any>(null);
-  const [activeLink, setActiveLink] = useState<Link | ProtonWebLink>();
   const [selectedElection, setSelectedElection] = useState<any>(null);
   const [recallData, setRecallData] = useState<any>(null);
   const [members, setMembers] = useState<any>([]);
@@ -111,6 +109,8 @@ const CouncilMembersPage = () => {
   const [category, setCategory] = useState("");
   const [revenueForm, setRevenueForm] = useState(false);
 
+  const { activeSession, connectWallet } = useWallet();
+
   const permission =
     activeSession?.auth?.actor?.toString() === "snipvote" ||
     activeSession?.auth?.actor?.toString() === "ahatashamul" ||
@@ -120,79 +120,27 @@ const CouncilMembersPage = () => {
   const router = useRouter();
   const now = Math.floor(Date.now() / 1000);
   const { token } = useContext(AuthContext);
-  
-  // let protonApi = new ApiClass('proton');
-  // console.log('proton', protonApi);
 
   useEffect(() => {
-    const restore = async () => {
-      try {
-        const { link, session } = await ProtonWebSDK({
-          linkOptions: {
-            chainId: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
-            endpoints: ['https://tn1.protonnz.com'],
-            restoreSession: true,
-          },
-          transportOptions: {
-            requestAccount: 'snipvote',
-          },
-          selectorOptions: {
-            appName: 'Snipverse',
-          },
-        });
-      
-        if (session && link) {
-          setActiveSession(session);
-          setActiveLink(link);
-        } else {
-          console.log('ℹ️ No session found or session invalid.');
-        }
-      } catch (error) {
-        console.error('❌ Error during session restoration:', error);
-      }
-    };
-      
-    restore();
     fetchElections();
     fetchRecallElections();
     fetchWinners();
     fetchModerators();
     fetchModApplication();
     fetchModRecalls();
-  }, []);
-    
-  const connectWallet = async () => {
-    try {
-      const { link, session } = await ProtonWebSDK({
-        linkOptions: {
-          endpoints: ["https://tn1.protonnz.com"],
-          chainId: "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd",
-          restoreSession: false,
-        },
-        transportOptions: {
-          requestAccount: "snipvote",
-        },
-        selectorOptions: {
-          appName: "Snipverse",
-        },
-      });
-    
-      if (session) {
-        setActiveSession(session);
-        setActiveLink(link);
-      }
-    } catch (error) {
-      console.error("Wallet connection failed:", error);
-    }
-  };
+  }, [])
+
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
+  const tokenAcc = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ACC!;
 
   const fetchElections = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'elections',
         limit: 100,
       });
@@ -205,11 +153,11 @@ const CouncilMembersPage = () => {
 
   const fetchRecallElections = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'recallvotes',
         limit: 100,
       });  
@@ -222,11 +170,11 @@ const CouncilMembersPage = () => {
 
   const fetchModRecalls = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'modrecall',
         limit: 100,
       });  
@@ -266,11 +214,11 @@ const CouncilMembersPage = () => {
   
   const fetchWinners = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'winners',
         limit: 100,
       });
@@ -296,11 +244,11 @@ const CouncilMembersPage = () => {
 
   const fetchModerators = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'moderators',
         limit: 100,
       });
@@ -324,11 +272,11 @@ const CouncilMembersPage = () => {
 
   const fetchModApplication = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'modcandidate',
         limit: 100,
       });  
@@ -373,13 +321,13 @@ const CouncilMembersPage = () => {
       return;
     }
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
   
       // Fetch report votes
       const reportVotesRes = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'reportvotes',
         limit: 100,
       });
@@ -394,8 +342,8 @@ const CouncilMembersPage = () => {
       // Fetch reports
       const reportsRes = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'modreports',
         limit: 100,
       });
@@ -404,8 +352,6 @@ const CouncilMembersPage = () => {
   
       // Filter reports where postId is in votingPostIds
       const filteredReports = reports.filter(report => votingPostIds.has(report.postId));
-  
-      console.log('Filtered Reports:', filteredReports);
 
       // Ensure hiddenPosts is already fetched
       const res = await fetch("/api/tweets/status/get", {
@@ -468,7 +414,7 @@ const CouncilMembersPage = () => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'winner',
         authorization: [
           {
@@ -503,7 +449,7 @@ const CouncilMembersPage = () => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'recallresult',
         authorization: [
           {
@@ -561,7 +507,7 @@ const CouncilMembersPage = () => {
       const endTimeSec = Math.floor(endUTC.getTime() / 1000);
 
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'createrecall',
         authorization: [
           {
@@ -613,7 +559,7 @@ const CouncilMembersPage = () => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'modrecall',
         authorization: [
           {
@@ -658,7 +604,7 @@ const CouncilMembersPage = () => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'modvote',
         authorization: [
           {
@@ -713,7 +659,7 @@ const CouncilMembersPage = () => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'modrecalvote',
         authorization: [
           {
@@ -755,7 +701,7 @@ const CouncilMembersPage = () => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'reportvote',
         authorization: [
           {
@@ -787,7 +733,7 @@ const CouncilMembersPage = () => {
 
   const fetchReportVotes = async (postId: string, username: string) => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
         code: 'snipvote',
@@ -833,11 +779,11 @@ const CouncilMembersPage = () => {
 
   const fetchWallet = async () => {
     try {
-    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'fundconfig',
     });
     
@@ -856,10 +802,10 @@ const CouncilMembersPage = () => {
 
   const fetchToken = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipx',
+        code: tokenAcc,
         scope: wallet,
         table: 'accounts',
       });
@@ -892,7 +838,7 @@ const CouncilMembersPage = () => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'createfprop',
         authorization: [
           {
@@ -1428,7 +1374,6 @@ const CouncilMembersPage = () => {
    <Rewards 
      setFundForm={setFundForm} 
      activeSession= {activeSession}
-     activeLink= {activeLink}
      connectWallet={connectWallet} 
    />
    }

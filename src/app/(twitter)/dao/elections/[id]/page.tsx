@@ -1,7 +1,6 @@
 "use client"
 import React, { useState, useEffect, useContext } from 'react';
 import { JsonRpc } from 'eosjs';
-import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
 import { Box, Typography, Button, Grid, Chip, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, Divider, LinearProgress, Avatar, Modal } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
@@ -13,6 +12,7 @@ import { getFullURL } from "@/utilities/misc/getFullURL";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
 import CircularLoading from "@/components/misc/CircularLoading";
+import { useWallet } from "@/context/WalletContext";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#7B1FA2'];
 
@@ -22,8 +22,6 @@ const getProgress = (start: number, end: number) => {
 };
 
 const ElectionDetails = ({ params }: { params: { id: string } }) => {
-  const [activeSession, setActiveSession] = useState<any>(null);
-  const [activeLink, setActiveLink] = useState<Link | ProtonWebLink>();
   const [selectedElection, setSelectedElection] = useState<any>(null);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
@@ -36,72 +34,23 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
   
   const election = decodeURIComponent(params.id);
   const { token } = useContext(AuthContext);
+  const { activeSession, connectWallet } = useWallet();
 
   useEffect(() => {
-      const restore = async () => {
-        try {
-          const { link, session } = await ProtonWebSDK({
-            linkOptions: {
-              chainId: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
-              endpoints: ['https://tn1.protonnz.com'],
-              restoreSession: true,
-            },
-            transportOptions: {
-              requestAccount: 'snipvote',
-            },
-            selectorOptions: {
-              appName: 'Snipverse',
-            },
-          });
-    
-          if (session && link) {
-            setActiveSession(session);
-            setActiveLink(link);
-          } else {
-            console.log('ℹ️ No session found or session invalid.');
-          }
-        } catch (error) {
-          console.error('❌ Error during session restoration:', error);
-        }
-      };
-    
-      restore();
-      fetchElections();
-      fetchCandidates();
-    }, []);
-  
-    const connectWallet = async () => {
-      try {
-        const { link, session } = await ProtonWebSDK({
-          linkOptions: {
-            endpoints: ["https://tn1.protonnz.com"],
-            chainId: "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd",
-            restoreSession: false,
-          },
-          transportOptions: {
-            requestAccount: "snipvote",
-          },
-          selectorOptions: {
-            appName: "Snipverse",
-          },
-        });
-  
-        if (session) {
-          setActiveSession(session);
-          setActiveLink(link);
-        }
-      } catch (error) {
-        console.error("Wallet connection failed:", error);
-      }
-    };
+    fetchElections();
+    fetchCandidates();
+  }, []);
+
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
 
   const fetchElections = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'elections',
         limit: 100,
       });
@@ -127,11 +76,11 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
   const fetchCandidates = async () => {
     setLoading(true);
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'candidates',
         limit: 100,
       });
@@ -170,13 +119,13 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
         console.log('No active session or actor found');
         return;
       }
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const actorName = activeSession.auth.actor.toString();
       console.log('Querying voter for:', actorName);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'voters',
         lower_bound: actorName,
         limit: 100,
@@ -211,7 +160,7 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'registercand',
         authorization: [
           {
@@ -261,7 +210,7 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'withdrawcand',
         authorization: [
           {
@@ -319,7 +268,7 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'vote',
         authorization: [
           {

@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { JsonRpc } from 'eosjs';
 import { useRouter } from "next/navigation";
-import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
 import {
   Container,
   Typography,
@@ -45,15 +44,18 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import { AuthContext } from "@/context/AuthContext";
+import { useWallet } from "@/context/WalletContext";
+import CustomSnackbar from "@/components/misc/CustomSnackbar";
+import { SnackbarProps } from "@/types/SnackbarProps";
 
 const ModeratorPage = () => {
-  const [activeSession, setActiveSession] = useState<any>(null);
-  const [activeLink, setActiveLink] = useState<Link | ProtonWebLink>();
   const [moderators, setModerators] = useState<any>([]);
   const [showRecallForm, setShowRecallForm] = useState(false);
   const [recalledMod, setRecalledMod] = useState("");
   const [reason, setReason] = useState("");
-
+  const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
+  
+  const { activeSession, connectWallet } = useWallet();
   const permission =
     activeSession?.auth?.actor?.toString() === "snipvote" ||
     activeSession?.auth?.actor?.toString() === "ahatashamul" ||
@@ -64,98 +66,8 @@ const ModeratorPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const restore = async () => {
-      try {
-        const { link, session } = await ProtonWebSDK({
-          linkOptions: {
-            chainId: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
-            endpoints: ['https://tn1.protonnz.com'],
-            restoreSession: true,
-          },
-          transportOptions: {
-            requestAccount: 'snipvote',
-          },
-          selectorOptions: {
-            appName: 'Snipverse',
-          },
-        });
-      
-        if (session && link) {
-          setActiveSession(session);
-          setActiveLink(link);
-        } else {
-          console.log('ℹ️ No session found or session invalid.');
-        }
-      } catch (error) {
-        console.error('❌ Error during session restoration:', error);
-      }
-    };
-      
-    restore();
-    // fetchElections();
-    // fetchRecallElections();
     fetchModerators();
   }, []);
-    
-  const connectWallet = async () => {
-    try {
-      const { link, session } = await ProtonWebSDK({
-        linkOptions: {
-          endpoints: ["https://tn1.protonnz.com"],
-          chainId: "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd",
-          restoreSession: false,
-        },
-        transportOptions: {
-          requestAccount: "snipvote",
-        },
-        selectorOptions: {
-          appName: "Snipverse",
-        },
-      });
-    
-      if (session) {
-        setActiveSession(session);
-        setActiveLink(link);
-      }
-    } catch (error) {
-      console.error("Wallet connection failed:", error);
-    }
-  };
-
-//   const fetchElections = async () => {
-//     try {
-//       const rpc = new JsonRpc('https://tn1.protonnz.com');
-//       const result = await rpc.get_table_rows({
-//         json: true,
-//         code: 'snipvote',
-//         scope: 'snipvote',
-//         table: 'elections',
-//         limit: 100,
-//       });
-//       const filteredElection = result.rows.filter((e) => (e.endTime < epochSeconds && e.status === "ongoing"));
-//       setSelectedElection(filteredElection[0]);
-//     } catch (error) {
-//       console.error('Failed to fetch election:', error);
-//     }
-//   };
-
-//   const fetchRecallElections = async () => {
-//     try {
-//       const rpc = new JsonRpc('https://tn1.protonnz.com');
-//       const result = await rpc.get_table_rows({
-//         json: true,
-//         code: 'snipvote',
-//         scope: 'snipvote',
-//         table: 'recallvotes',
-//         limit: 100,
-//       });
-//       console.log('Recall elections data:', result.rows);
-//       const filteredRecall = result.rows.filter((e) => (e.endTime < epochSeconds && e.status === "ongoing"));
-//       setRecallData(filteredRecall[0]);
-//     } catch (error) {
-//       console.error('Failed to fetch elections:', error);
-//     }
-//   };
   
   const getCachedUser = async (username: string) => {
     const key = `user_${username}`;
@@ -168,14 +80,17 @@ const ModeratorPage = () => {
     sessionStorage.setItem(key, JSON.stringify(userData.user));
     return userData.user;
   };
+
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
   
   const fetchModerators = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'moderators',
         limit: 100,
       });
@@ -199,14 +114,18 @@ const ModeratorPage = () => {
 
   const handleApply = async () => {
     if (!activeSession) {
-      alert('Please connect wallet first');
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: "error",
+        open: true,
+      });
       connectWallet();
       return;
     }
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'modapply',
         authorization: [
           {
@@ -229,8 +148,11 @@ const ModeratorPage = () => {
         }
       );
 
-      console.log('Successfully applied as moderator:', result);
-      alert('Successfully applied as moderator!');
+      setSnackbar({
+        message: 'Successfully applied as moderator!',
+        severity: "success",
+        open: true,
+      });
     } catch (error: any) {
       console.error('Failed to create recall election:', error);
     }
@@ -238,7 +160,11 @@ const ModeratorPage = () => {
 
   const handleModRecall = async () => {
     if (!activeSession) {
-      alert('Please connect wallet first');
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: "error",
+        open: true,
+      });
       connectWallet();
       return;
     }
@@ -247,13 +173,17 @@ const ModeratorPage = () => {
       return;
     }
     if (!reason.trim()) {
-      alert('Please choose a reason to recall moderator.');
+      setSnackbar({
+        message: 'Please choose a reason to recall moderator.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'modrecall',
         authorization: [
           {
@@ -277,9 +207,12 @@ const ModeratorPage = () => {
         }
       );
 
-      console.log('Recall election created successfully:', result);
-      alert('Recall election created successfully!');
       setShowRecallForm(false);
+      setSnackbar({
+        message: 'Recall election created successfully!',
+        severity: "success",
+        open: true,
+      });
     } catch (error: any) {
       console.error('Failed to create recall election:', error);
     }
@@ -291,7 +224,6 @@ const ModeratorPage = () => {
         <FaUsersCog style={{ marginRight: 8 }} /> Snipverse Moderators
       </Typography>
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-        {/* Explore the Snipverse Moderators section to learn about our elected moderators and their roles. Stay informed about their contributions to our decentralized community. */}
         Meet the Snipverse Moderators — Learn about their roles and how they contribute to shaping our decentralized community.
       </Typography>
 
@@ -381,7 +313,9 @@ const ModeratorPage = () => {
        </>
       }
 
-
+      {snackbar.open && (
+        <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
+      )}
 
       {/* Create Election Dialog */}
       <Dialog open={showRecallForm} onClose={() => setShowRecallForm(false)} fullWidth maxWidth="sm">

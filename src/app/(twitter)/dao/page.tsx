@@ -24,16 +24,19 @@ export default function DaoDashboard() {
   const [proposals, setProposals] = useState<any>([]);
   const [revenue, setRevenue] = useState<any>([]);
   const [transaction, setTransaction] = useState<any []>([])
+
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
+  const tokenAcc = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ACC!;
+
   
-  
-  const now = Math.floor(Date.now() / 1000);
   const fetchElections = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'elections',
         limit: 100,
       });
@@ -45,11 +48,11 @@ export default function DaoDashboard() {
 
   const fetchWinners = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'winners',
         limit: 100,
       });
@@ -64,11 +67,11 @@ export default function DaoDashboard() {
 
   const fetchWallet = async () => {
     try {
-    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
       json: true,
-      code: 'snipvote',
-      scope: 'snipvote',
+      code: contractAcc,
+      scope: contractAcc,
       table: 'fundconfig',
     });
         
@@ -87,10 +90,10 @@ export default function DaoDashboard() {
       
   const fetchToken = async () => {
     try {
-    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
       json: true,
-      code: 'snipx',
+      code: tokenAcc,
       scope: wallet,
       table: 'accounts',
     });
@@ -109,11 +112,11 @@ export default function DaoDashboard() {
     
   const fetchModerators = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'moderators',
         limit: 100,
       });
@@ -125,11 +128,11 @@ export default function DaoDashboard() {
   };
   const fetchProposals = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'proposals',
         limit: 100,
       });
@@ -142,11 +145,11 @@ export default function DaoDashboard() {
 
   const fetchRevenue = async () => {
     try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'revenues',
       });
         
@@ -159,11 +162,11 @@ export default function DaoDashboard() {
 
   const fetchTransac = async () => {
     try {
-    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
       json: true,
-      code: 'snipvote',
-      scope: 'snipvote',
+      code: contractAcc,
+      scope: contractAcc,
       table: 'fundprops',
       limit: 100,
     });

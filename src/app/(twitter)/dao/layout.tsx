@@ -23,10 +23,12 @@ import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import ProtonWebSDK, { Link, ProtonWebLink } from '@proton/web-sdk';
 
-import { MdMenu, MdExitToApp, MdAccountBalanceWallet, MdHowToVote, MdGroups, MdOutlineGavel, MdOutlinePolicy, MdRefresh, MdChevronLeft } from "react-icons/md";
+import { MdMenu, MdExitToApp, MdAccountBalanceWallet, MdHowToVote, MdGroups, MdOutlineGavel, MdOutlinePolicy, MdChevronLeft } from "react-icons/md";
 import { RiDashboardLine } from "react-icons/ri";
-import { AiOutlineUserAdd } from "react-icons/ai";
-import { FaVoteYea, FaMoneyBillWave } from "react-icons/fa";
+import { FaMoneyBillWave } from "react-icons/fa";
+import { WalletProvider } from "@/context/WalletContext";
+import CustomSnackbar from "@/components/misc/CustomSnackbar";
+import { SnackbarProps } from "@/types/SnackbarProps";
 
 const drawerWidth = 460;
 const mainContentMaxWidth = 1200;
@@ -93,13 +95,11 @@ const StyledListItem = styled(ListItemButton)(({ theme }) => ({
 const NAV_LINKS = [
   { label: "Dashboard", path: "/dao", icon: <RiDashboardLine /> },
   { label: "Elections", path: "/dao/elections", icon: <MdHowToVote /> },
-  { label: "Candidate Registration", path: "/dao/candidate-registration", icon: <AiOutlineUserAdd /> },
-  { label: "Voting", path: "/dao/voting", icon: <FaVoteYea /> },
   { label: "Council Members", path: "/dao/council_members", icon: <MdGroups /> },
   { label: "Moderators", path: "/dao/moderators", icon: <MdOutlineGavel /> },
   { label: "Proposals", path: "/dao/proposals", icon: <MdOutlinePolicy /> },
-  { label: "Recall Voting", path: "/dao/recall-vote", icon: <MdRefresh /> },
-  { label: "Community Wallet", path: "/dao/community-wallet", icon: <FaMoneyBillWave /> },
+  { label: "Revenue", path: "/dao/revenue", icon: <FaMoneyBillWave /> },
+  { label: "Community Wallet", path: "/dao/community_wallet", icon: <MdAccountBalanceWallet /> },
 ];
 
 export default function DaoDashboardLayout({ children }: { children: ReactNode }) {
@@ -107,20 +107,25 @@ export default function DaoDashboardLayout({ children }: { children: ReactNode }
   const [activeLink, setActiveLink] = useState<Link | ProtonWebLink>();
   const [walletConnected, setWalletConnected] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
   const pathname = usePathname();
+
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const chainId = process.env.NEXT_PUBLIC_CHAIN_ID;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
 
   useEffect(() => {
     const restore = async () => {
       try {
         const { link, session } = await ProtonWebSDK({
           linkOptions: {
-            chainId: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
-            endpoints: ['https://tn1.protonnz.com'],
+            chainId: chainId,
+            endpoints: [endpoint],
             restoreSession: true,
           },
           transportOptions: {
-            requestAccount: 'snipvote',
+            requestAccount: contractAcc,
           },
           selectorOptions: {
             appName: 'Snipverse',
@@ -147,12 +152,12 @@ export default function DaoDashboardLayout({ children }: { children: ReactNode }
     try {
       const { link, session } = await ProtonWebSDK ({
         linkOptions: {
-          endpoints: ["https://tn1.protonnz.com"],
-          chainId: "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd",
+          endpoints: [endpoint],
+          chainId: chainId,
           restoreSession: false,
         },
         transportOptions: {
-          requestAccount: "snipvote",
+          requestAccount: contractAcc,
         },
         selectorOptions: {
           appName: "Snipverse",
@@ -164,6 +169,11 @@ export default function DaoDashboardLayout({ children }: { children: ReactNode }
         setActiveSession(session);
         setActiveLink(link);
         setWalletConnected(true);
+        setSnackbar({
+          message: 'Wallet Connected Successfully!',
+          severity: "success",
+          open: true,
+        });
       }
     } catch (error) {
       console.error("Wallet connection failed:", error);
@@ -173,18 +183,24 @@ export default function DaoDashboardLayout({ children }: { children: ReactNode }
   const disconnectWallet = async () => {
     if (activeLink) {
       try {
-        await activeLink.removeSession("Snipverse", activeSession.auth.actor, "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd");
+        await activeLink.removeSession("Snipverse", activeSession.auth.actor, chainId);
         setActiveSession(null);
         setActiveLink(undefined);
-        console.log("Wallet disconnected.");
         setWalletConnected(false);
-        alert("Wallet disconnected.");
+        setSnackbar({
+          message: 'Wallet disconnected!',
+          severity: "success",
+          open: true,
+        });
       } catch (error) {
         console.error("Error disconnecting wallet:", error);
-        alert("Error disconnecting wallet: " + (error || "Unknown error"));
       }
     } else {
-      alert("No wallet connected to disconnect.");
+      setSnackbar({
+        message: 'No wallet connected to disconnect.',
+        severity: "error",
+        open: true,
+      });
     }
   };
 
@@ -299,9 +315,15 @@ export default function DaoDashboardLayout({ children }: { children: ReactNode }
         </StyledDrawerPaper>
       </Drawer>
 
+      {snackbar.open && (
+        <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
+      )}
+
       {/* Main Content Area */}
       <Box sx={{ p: 0, mt: 10, }} >
-        {children}
+        <WalletProvider>
+          {children}
+        </WalletProvider>
       </Box>
     </Box>
   );

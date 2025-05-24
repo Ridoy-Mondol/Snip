@@ -56,13 +56,17 @@ const CommunityWalletDashboard = () => {
   const [totalBalance, setTotalBalance] = useState<number>();
   const [wallet, setWallet] = useState("");
 
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
+  const tokenAcc = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ACC!;
+
   const fetchProposals = async () => {
     try {
-    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'fundprops',
         limit: 100,
     });
@@ -80,11 +84,11 @@ const CommunityWalletDashboard = () => {
 
   const fetchWallet = async () => {
     try {
-    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipvote',
-        scope: 'snipvote',
+        code: contractAcc,
+        scope: contractAcc,
         table: 'fundconfig',
     });
   
@@ -103,10 +107,10 @@ const CommunityWalletDashboard = () => {
 
   const fetchToken = async () => {
     try {
-    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
         json: true,
-        code: 'snipx',
+        code: tokenAcc,
         scope: wallet,
         table: 'accounts',
     });

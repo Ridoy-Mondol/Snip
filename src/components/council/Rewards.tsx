@@ -45,11 +45,10 @@ interface Proposal {
 type ChildProps = {
   setFundForm: (value: boolean) => void;
   activeSession: any;
-  activeLink: any;
   connectWallet: () => void;
 };
 
-const CouncilActions = ({ setFundForm, activeSession, activeLink, connectWallet }: ChildProps) => {
+const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProps) => {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [value, setValue] = useState(0);
   const [openModal, setOpenModal] = useState(false);

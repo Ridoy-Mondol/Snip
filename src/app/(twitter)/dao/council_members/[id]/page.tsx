@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, 
 
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
+import { StatCard } from "@/components/dashboard/StatCard";
 
 // Colors for Pie Charts
 const PIE_COLORS = [
@@ -29,25 +30,6 @@ const PIE_COLORS = [
 const BAR_COLORS = [
   '#8884d8', '#82ca9d', '#ffc658', '#d0ed57', '#a4de6c', '#83a6ed', '#8dd1e1', '#82b6c1', '#e580a5', '#c8d8f0', '#f4d0d0', '#b8b8b8'
 ];
-
-// --- StatCard Component ---
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <Card sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}>
-    <CardContent>
-      <Box display="flex" alignItems="center" gap={2}>
-        <Box fontSize={32} color="primary.main">
-          {icon}
-        </Box>
-        <Box>
-          <Typography variant="h6">{label}</Typography>
-          <Typography variant="subtitle1" fontWeight="bold">
-            {value}
-          </Typography>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
 
 export default function MemberProfile({ params }: { params: { id: string } }) {
   const [memberInfo, setMemberInfo] = useState<{ status: string; image: string }>({

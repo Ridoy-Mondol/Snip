@@ -1,21 +1,39 @@
 "use client"
-import { Box, Button, Typography } from "@mui/material";
-import { FaVoteYea } from "react-icons/fa";
-import { AiOutlineUserAdd } from "react-icons/ai";
+import { Typography, Container, useTheme } from "@mui/material";
 
 export default function DaoHeader() {
+  const theme = useTheme();
+
   return (
-    <Box textAlign="center" my={4}>
-      <Typography variant="h4" fontWeight="bold">🏛️ Snipverse DAO Dashboard</Typography>
-      <Typography variant="subtitle1" color="gray">Empowering the Snipverse community through decentralized governance.</Typography>
-      <Box mt={2}>
-        <Button variant="contained" color="primary" startIcon={<AiOutlineUserAdd />} sx={{ mx: 1 }}>
-          Apply as Candidate
-        </Button>
-        <Button variant="contained" color="secondary" startIcon={<FaVoteYea />} sx={{ mx: 1 }}>
-          View Elections
-        </Button>
-      </Box>
-    </Box>
+    <Container maxWidth="md" disableGutters sx={{ textAlign: "left" }}>
+      <Typography
+        variant="h3"
+        component="h1"
+        fontWeight={700}
+        sx={{
+          color: theme.palette.primary.main,
+          mb: 1.5,
+          letterSpacing: '-0.02em',
+          fontSize: { xs: '2.2rem', sm: '3rem', md: '3.5rem' },
+        }}
+      >
+        <span role="img" aria-label="governance-icon">🏛️</span> Snipverse DAO
+      </Typography>
+      <Typography
+        variant="h6"
+        color="text.secondary"
+        sx={{
+          mb: { xs: 3, md: 4 },
+          fontWeight: 400,
+          lineHeight: 1.5,
+          maxWidth: 700,
+          mx: 'auto',
+          fontSize: { xs: '1rem', sm: '1.25rem' },
+        }}
+      >
+        Empowering the Snipverse community through transparent and decentralized governance.
+        Your voice shapes the future.
+      </Typography>
+    </Container>
   );
 }

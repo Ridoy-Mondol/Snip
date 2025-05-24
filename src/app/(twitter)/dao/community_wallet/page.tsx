@@ -68,7 +68,7 @@ const CommunityWalletDashboard = () => {
     });
         setProposals(result.rows);
     } catch (error) {
-    console.error('Failed to fetch election:', error);
+    console.error('Failed to fetch proposal:', error);
     }
   };
   

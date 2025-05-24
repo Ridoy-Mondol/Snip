@@ -6,6 +6,8 @@ import { Box, Card, CardContent, Typography, Grid, Container } from '@mui/materi
 import { FaDollarSign, FaClock, FaChartBar, FaHandHoldingUsd } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
+import { StatCard } from "@/components/dashboard/StatCard";
+
 type RevenueRecord = {
   id: number;
   submittedBy: string;
@@ -22,26 +24,6 @@ const COLORS = [
   '#00BFA6', '#FF7F50', '#6A5ACD',
   '#20C997', '#FF6B6B', '#B0E57C'
 ];
-
-
-
-const StatCard = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
-  <Card sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}>
-    <CardContent>
-      <Box display="flex" alignItems="center" gap={2}>
-        <Box fontSize={32} color="primary.main">
-          {icon}
-        </Box>
-        <Box>
-          <Typography variant="h6">{label}</Typography>
-          <Typography variant="subtitle1" fontWeight="bold">
-            {value}
-          </Typography>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-);
 
 export default function RevenueDashboard() {
   const [revenue, setRevenue] = useState<RevenueRecord[]>([]);

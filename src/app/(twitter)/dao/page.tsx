@@ -1,31 +1,246 @@
 "use client"
-import { Box, Container, Grid } from "@mui/material";
+import React, {useState, useEffect} from 'react';
+import { JsonRpc } from 'eosjs';
+import { FiActivity } from "react-icons/fi";
+import { Box, Container, Grid, Typography } from "@mui/material";
 import DaoHeader from "@/components/dashboard/DaoHeader";
 import KeyMetrics from "@/components/dashboard/KeyMetrics";
-import ActiveElections from "@/components/dashboard/ActiveElections";
+import RecentElections from "@/components/dashboard/RecentElections";
 import VotingData from "@/components/dashboard/VotingData";
 import CommunityWallet from "@/components/dashboard/CommunityWallet";
 import CouncilMembers from "@/components/dashboard/CouncilMembers";
 import RecallVote from "@/components/dashboard/RecallVote";
+import RecentProposals from '@/components/dashboard/RecentProposals';
+import RecentTransaction from '@/components/dashboard/RecentTransaction';
+import AboutSection from '@/components/dashboard/About';
+import Announcements from '@/components/dashboard/Announcements';
 
 export default function DaoDashboard() {
+  const [election, setElection] = useState<any[]>([]);
+  const [members, setMembers] = useState<any>([]);
+  const [moderators, setModerators] = useState<any>([]);
+  const [totalBalance, setTotalBalance] = useState<number>();
+  const [wallet, setWallet] = useState("");
+  const [proposals, setProposals] = useState<any>([]);
+  const [revenue, setRevenue] = useState<any>([]);
+  const [transaction, setTransaction] = useState<any []>([])
+  
+  
+  const now = Math.floor(Date.now() / 1000);
+  const fetchElections = async () => {
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'elections',
+        limit: 100,
+      });
+      setElection(result.rows);
+    } catch (error) {
+      console.error('Failed to fetch election:', error);
+    }
+  };
+
+  const fetchWinners = async () => {
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'winners',
+        limit: 100,
+      });
+      const currentMember = result.rows.filter((m) => (m.status === "active"));
+    
+      setMembers(currentMember);
+    
+    } catch (error) {
+      console.error('Failed to fetch member:', error);
+    }
+  };
+
+  const fetchWallet = async () => {
+    try {
+    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const result = await rpc.get_table_rows({
+      json: true,
+      code: 'snipvote',
+      scope: 'snipvote',
+      table: 'fundconfig',
+    });
+        
+    const account = result?.rows?.[0]?.communityWallet;
+    if (!account) return null;
+    setWallet(account);
+      
+    } catch (error) {
+      console.error('Failed to fetch community wallet:', error);
+    }
+  };
+      
+  useEffect (() => {
+    fetchWallet();
+  }, []);
+      
+  const fetchToken = async () => {
+    try {
+    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const result = await rpc.get_table_rows({
+      json: true,
+      code: 'snipx',
+      scope: wallet,
+      table: 'accounts',
+    });
+        
+    const balanceStr = result?.rows?.[0]?.balance;
+    if (!balanceStr) return null;
+        
+    const [amountStr] = balanceStr.split(' ');
+    const amount = parseFloat(amountStr);
+    setTotalBalance(amount);
+                
+    } catch (error) {
+      console.error('Failed to fetch reports:', error);
+    }
+  };
+    
+  const fetchModerators = async () => {
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'moderators',
+        limit: 100,
+      });
+          
+      setModerators(result.rows);
+    } catch (error) {
+      console.error('Failed to fetch moderators:', error);
+    }
+  };
+  const fetchProposals = async () => {
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'proposals',
+        limit: 100,
+      });
+      
+      setProposals(result.rows);
+    } catch (error) {
+      console.error('Failed to fetch moderator:', error);
+    }
+  };
+
+  const fetchRevenue = async () => {
+    try {
+      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: 'snipvote',
+        scope: 'snipvote',
+        table: 'revenues',
+      });
+        
+      setRevenue(result.rows);
+                   
+    } catch (error) {
+      console.error('Failed to fetch revenues:', error);
+    }
+  };
+
+  const fetchTransac = async () => {
+    try {
+    const rpc = new JsonRpc('https://tn1.protonnz.com');
+    const result = await rpc.get_table_rows({
+      json: true,
+      code: 'snipvote',
+      scope: 'snipvote',
+      table: 'fundprops',
+      limit: 100,
+    });
+    const filtered = result.rows.filter((t) => t.status === "approved")
+    setTransaction(filtered);
+    } catch (error) {
+      console.error('Failed to fetch election:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchElections();
+    fetchWinners();
+    fetchModerators();
+    fetchProposals();
+    fetchToken();
+    fetchRevenue();
+    fetchTransac();
+  },[wallet]);
   return (
     <Container maxWidth="lg">
-      {/* <DaoHeader /> */}
+      <DaoHeader />
       <Grid container spacing={3}>
+
+        <Grid item xs={12} md={12}>
+          <AboutSection />
+        </Grid>
+
         <Grid item xs={12}>
-          <KeyMetrics />
+          <KeyMetrics
+            election={election}
+            members={members}
+            moderators={moderators}
+            totalBalance={totalBalance}
+            proposals={proposals}
+            revenue={revenue}
+          />
         </Grid>
+
         <Grid item xs={12} md={12}>
-          <ActiveElections />
+          <Announcements
+            election={election}
+            proposals={proposals}
+            transaction={transaction}
+          />
         </Grid>
+
+        <Grid item xs={12} md={12} mt={6}> 
+        <Typography variant="h4" align="left" fontWeight={600} gutterBottom>
+          <Box component="span" sx={{ verticalAlign: "middle", mr: 1 }}>
+            <FiActivity />
+          </Box>
+          Recent DAO Activity
+        </Typography>
+
+        <Typography variant="body1" color="text.secondary" mb={4}>
+          Stay informed with the latest DAO actions — from newly submitted proposals and recent council elections
+          to updates on key governance decisions. This section highlights the ongoing evolution of the Snipverse ecosystem.
+        </Typography>
         <Grid item xs={12} md={12}>
+          <RecentElections election={election} />
+        </Grid>
+        <Grid item xs={12} md={12} mt={4}>
+          <RecentProposals proposals={proposals} />
+        </Grid>
+        <Grid item xs={12} md={12} my={4}>
+          <RecentTransaction transaction={transaction}  />
+        </Grid>
+        </Grid>
+      
+        {/* <Grid item xs={12} md={12}>
           <VotingData />
         </Grid>
         <Grid item xs={12} md={12}>
           <CommunityWallet />
         </Grid>
-        {/* <Grid item xs={12} md={12}>
+        <Grid item xs={12} md={12}>
           <CouncilMembers />
         </Grid>
         <Grid item xs={12}>

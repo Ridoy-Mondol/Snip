@@ -27,6 +27,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { useWallet } from "@/context/WalletContext";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
+import EmptyState from '@/components/dashboard/EmptyState';
 
 const Election = () => {
   const [elections, setElections] = useState<any[]>([]);
@@ -340,21 +341,7 @@ const Election = () => {
 
     if (data.length === 0) {
       return (
-        <Grid item xs={12}>
-          <Box
-            sx={{
-              textAlign: 'center',
-              mt: 4,
-              p: 3,
-              border: '1px dashed #ccc',
-              borderRadius: 2,
-            }}
-          >
-            <Typography variant="h6" color="text.secondary">
-              {emptyMessage}
-            </Typography>
-          </Box>
-        </Grid>
+        <EmptyState message={emptyMessage} />
       );
     }
 
@@ -453,23 +440,9 @@ const Election = () => {
 
       {/* Active Elections Tab */}
       {tab === 0 && (
-        <Grid container spacing={2}>
+          <Grid container spacing={2}>
           {activeElections.length === 0 ? (
-            <Grid item xs={12}>
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  mt: 4,
-                  p: 3,
-                  border: '1px dashed #ccc',
-                  borderRadius: 2,
-                }}
-              >
-                <Typography variant="h6" color="text.secondary">
-                  No active elections at the moment.
-                </Typography>
-              </Box>
-            </Grid>
+            <EmptyState message="No active elections at the moment." />
           ) : (
             activeElections.map((e) => renderElectionCard(e))
           )}
@@ -480,21 +453,7 @@ const Election = () => {
       {tab === 1 && (
         <Grid container spacing={2}>
           {pastElections.length === 0 ? (
-            <Grid item xs={12}>
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  mt: 4,
-                  p: 3,
-                  border: '1px dashed #ccc',
-                  borderRadius: 2,
-                }}
-              >
-                <Typography variant="h6" color="text.secondary">
-                  No past elections recorded.
-                </Typography>
-              </Box>
-            </Grid>
+            <EmptyState message="No past elections recorded." />
           ) : (
             pastElections.map((e) => renderElectionCard(e, true))
           )}

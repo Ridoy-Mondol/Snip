@@ -46,9 +46,10 @@ type ChildProps = {
   setFundForm: (value: boolean) => void;
   activeSession: any;
   connectWallet: () => void;
+  setSnackbar: any;
 };
 
-const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProps) => {
+const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar }: ChildProps) => {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [value, setValue] = useState(0);
   const [openModal, setOpenModal] = useState(false);
@@ -88,6 +89,11 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProp
 
   const submitConfig = async () => {
     if (!activeSession) {
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: 'error',
+        open: true,
+      });
       connectWallet();
       return;
     }
@@ -119,7 +125,11 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProp
         }
       );
       setConfigModal(false);
-      alert('Successfully updated the configuration!');
+      setSnackbar({
+        message: 'Successfully updated the configuration!',
+        severity: 'success',
+        open: true,
+      });
     } catch (error) {
       console.error('Error updating configuration:', error);
     }
@@ -127,6 +137,11 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProp
 
   const grantPermission = async () => {
   if (!activeSession) {
+    setSnackbar({
+      message: 'Please connect wallet first',
+      severity: 'error',
+      open: true,
+    });
     connectWallet();
     return;
   }
@@ -147,14 +162,21 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProp
     pubKey = activePermission?.required_auth?.keys?.[0]?.key;
 
     if (!pubKey) {
-      alert("❌ Could not find active public key.");
+      setSnackbar({
+        message: "❌ Could not find active public key.",
+        severity: 'error',
+        open: true,
+      });
       return;
     }
 
-    console.log("Public Key:", pubKey);
   } catch (error) {
     console.error("Error fetching public key:", error);
-    alert("❌ Failed to fetch public key.");
+    setSnackbar({
+      message: "❌ Failed to fetch public key.",
+      severity: 'error',
+      open: true,
+    });
     return;
   }
 
@@ -217,16 +239,28 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProp
       { broadcast: true }
     );
 
-    alert('✅ Permission granted and linked to transfer!');
+    setSnackbar({
+      message: '✅ Permission granted and linked to transfer!',
+      severity: 'success',
+      open: true,
+    });
   } catch (error) {
     console.error('Failed to grant permission:', error);
-    alert('Failed to grant permission.');
+    setSnackbar({
+      message: 'Failed to grant permission.',
+      severity: 'error',
+      open: true,
+    });
   }
   };
 
-
   const voteProposal = async (vote: string) => {
     if (!activeSession) {
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: 'error',
+        open: true,
+      });
       connectWallet();
       return;
     }
@@ -257,7 +291,11 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProp
         }
       );
       setOpenModal(false);
-      alert('Successfully voted on this proposal!');
+      setSnackbar({
+        message: 'Successfully voted on this proposal!',
+        severity: 'success',
+        open: true,
+      });
     } catch (error) {
       console.error('Error submitting vote:', error);
     }
@@ -265,6 +303,11 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProp
 
   const handleStatus = async (proposalId: number, status: string) => {
     if (!activeSession) {
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: 'error',
+        open: true,
+      });
       connectWallet();
       return;
     }
@@ -295,7 +338,11 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet }: ChildProp
         }
       );
       setOpenModal(false);
-      alert(`Successfully ${status ==='open' ? "resumed" : "paused"} fund distribution!`);
+      setSnackbar({
+        message: `Successfully ${status ==='open' ? "resumed" : "paused"} fund distribution!`,
+        severity: 'success',
+        open: true,
+      });
     } catch (error) {
       console.error(`Error ${status ==='open' ? "resuming" : "pausing"} fund distribution:`, error);
     }

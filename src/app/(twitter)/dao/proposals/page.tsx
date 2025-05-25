@@ -40,6 +40,7 @@ import { AuthContext } from "@/context/AuthContext";
 import { useWallet } from "@/context/WalletContext";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
+import EmptyState from "@/components/dashboard/EmptyState";
 
 export default function ProposalPage() {
   const [tab, setTab] = useState<'active' | 'past'>('active');
@@ -412,21 +413,7 @@ export default function ProposalPage() {
             </Grid>
           ))
         ) : (
-            <Grid item xs={12}>
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  mt: 4,
-                  p: 3,
-                  border: '1px dashed #ccc',
-                  borderRadius: 2,
-                }}
-              >
-                <Typography variant="h6" color="text.secondary">
-                  {tab === "active" ? "No active proposals available" : "No past proposals recorded"}
-                </Typography>
-              </Box>
-            </Grid>
+            <EmptyState message={tab === "active" ? "No active proposals available" : "No past proposals recorded"} />
           )}
       </Grid>
     </Box>

@@ -47,6 +47,7 @@ import { AuthContext } from "@/context/AuthContext";
 import { useWallet } from "@/context/WalletContext";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
+import EmptyState from '@/components/dashboard/EmptyState';
 
 const ModeratorPage = () => {
   const [moderators, setModerators] = useState<any>([]);
@@ -252,7 +253,7 @@ const ModeratorPage = () => {
 
 
       {
-      moderators?.length > 0 &&
+      moderators?.length > 0 ?
       <>
       <Typography variant="h6" gutterBottom>
         Moderator Overview
@@ -310,7 +311,9 @@ const ModeratorPage = () => {
           </Table>
         </TableContainer>
        </Paper>
-       </>
+       </> : (
+         <EmptyState message="No Active Moderators Available." />
+       )
       }
 
       {snackbar.open && (

@@ -14,21 +14,31 @@ type Props = {
   onClose: () => void;
   activeSession: any;
   connectWallet: any;
-  fetchToken: any;
+  fetchToken: () => Promise<number | undefined | null>;
+  setSnackbar: any
 };
 
-const RevenueForm: React.FC<Props> = ({ open, onClose, activeSession, connectWallet, fetchToken }) => {
+const RevenueForm: React.FC<Props> = ({ open, onClose, activeSession, connectWallet, fetchToken, setSnackbar }) => {
   const [totalRevenue, setTotalRevenue] = useState<number>();
   const [percent, setPercent] = useState<number>();
 
   const handleSubmit = async () => {
     const availablebalance = await fetchToken();
     if (!availablebalance) {
-      alert('The community wallet has no balance.');
+      setSnackbar({
+        message: 'The community wallet has no balance.',
+        severity: "error",
+        open: true,
+      });
       return;
     }
 
     if (!activeSession) {
+      setSnackbar({
+        message: 'Please connect wallet first',
+        severity: "error",
+        open: true,
+      });
       connectWallet();
       return;
     }
@@ -60,7 +70,11 @@ const RevenueForm: React.FC<Props> = ({ open, onClose, activeSession, connectWal
         }
       );
       onClose();
-      alert('Revenue shared successfully!');
+      setSnackbar({
+        message: 'Revenue shared successfully!',
+        severity: "success",
+        open: true,
+      });
     } catch (error) {
       console.error('Error sharing revenue:', error);
     }

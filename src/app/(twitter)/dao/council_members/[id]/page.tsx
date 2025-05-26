@@ -4,11 +4,13 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { JsonRpc } from 'eosjs';
 import { Box, Card, CardContent, Typography, Grid, Container, Avatar } from '@mui/material';
 import { FaTasks, FaVoteYea, FaDollarSign, FaStar } from 'react-icons/fa';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import { StatCard } from "@/components/dashboard/StatCard";
+import PieChart from '@/components/chart/PieChart';
+import BarChart from '@/components/chart/BarChart';
 
 // Colors for Pie Charts
 const PIE_COLORS = [
@@ -240,55 +242,15 @@ export default function MemberProfile({ params }: { params: { id: string } }) {
             <Typography variant="h6" gutterBottom>
               Overall Contribution Breakdown
             </Typography>
-            <Container sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-              <Box sx={{ width: 350, height: 350, position: "relative" }}>
-                {contributionData.length > 0 && contributionData.some(item => item.value > 0) && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={contributionData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        labelLine={false}
-                        paddingAngle={2}
-                        stroke="transparent"
-                        dataKey="value"
-                        label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                      >
-                        {contributionData.map((entry, index) => (
-                          <Cell key={`cell-contribution-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number, name: string) => [`${value}`, name]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    fontSize: "1rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {contributionData.length > 0 ? "Contribution" : "No contribution data available."}
-                </Box>
-              </Box>
-            </Container>
 
-            {/* Fund Distribution Legend */}
-            <Box sx={{ display: "flex", justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
-              {contributionData.map((item, index) => (
-              <Box key={index} sx={{ display: "flex", alignItems: "center", fontSize: "0.9rem" }}>
-              <Box sx={{ width: 12, height: 12, bgcolor: PIE_COLORS[index % PIE_COLORS.length], borderRadius: "50%", mr: 1 }} />
-                {item.name}
-              </Box>
-              ))}
-            </Box>
+            <PieChart
+              data={contributionData}
+              nameKey="name"
+              valueKey="value"
+              PIE_COLORS={PIE_COLORS}
+              centerLabel="Contributions"
+            />
+
           </CardContent>
         </Card>
       </Grid>
@@ -300,20 +262,19 @@ export default function MemberProfile({ params }: { params: { id: string } }) {
             <Typography variant="h6" gutterBottom>
               Monthly Revenue Share
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={currentYearPerformance.sort((a, b) => a.month - b.month)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                <XAxis dataKey="month" tickFormatter={formatMonth} />
-                <YAxis tickFormatter={(value: number) => `${(value / 10000).toFixed(0)}`} />
-                <Tooltip formatter={(value: number) => [`${(value / 10000).toFixed(4)} SNIPS`, 'Revenue Share']} />
-                <Bar dataKey="revenueShare" name="Revenue Share">
-                  {
-                    currentYearPerformance.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                    ))
-                  }
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+
+            <BarChart
+              data={currentYearPerformance}
+              dataKey="revenueShare"
+              xAxisKey="month"
+              name="Revenue Share"
+              barColors={BAR_COLORS}
+              formatXAxis={formatMonth}
+              formatYAxis={(value) => `${(value / 10000).toFixed(0)}`}
+              tooltipFormatter={(value) => [`${(value / 10000).toFixed(4)} SNIPS`, "Revenue Share"]}
+              sortBy="month"
+            />
+
           </CardContent>
         </Card>
       </Grid>

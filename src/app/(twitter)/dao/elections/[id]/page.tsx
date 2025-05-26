@@ -3,7 +3,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { JsonRpc } from 'eosjs';
 import { Box, Typography, Button, Grid, Chip, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, Divider, LinearProgress, Avatar, Modal } from '@mui/material';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import Countdown from "react-countdown";
 
 import { AuthContext } from "@/context/AuthContext";
@@ -13,6 +12,8 @@ import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
 import CircularLoading from "@/components/misc/CircularLoading";
 import { useWallet } from "@/context/WalletContext";
+import PieChart from '@/components/chart/PieChart';
+import BarChart from '@/components/chart/BarChart';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#7B1FA2'];
 
@@ -327,6 +328,11 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
 
   const getCountdown = (timestamp: number) => formatDistanceToNowStrict(new Date(timestamp * 1000), { addSuffix: true });
 
+  const topCandidates = [...candidates]
+  .filter(c => c.totalVotes > 0)
+  .sort((a, b) => b.totalVotes - a.totalVotes)
+  .slice(0, 5);
+
   return (
     <Box sx={{ p: 4 }}>
       {/* HEADER */}
@@ -370,7 +376,7 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
                 <Box sx={{ mb: 4 }}>
                   {registrationNotStarted && (
                     <>
-                      <Typography variant="h6">🕒 Registration hasn't started yet.</Typography>
+                      <Typography variant="h6">🕒 Registration hasn&apos;t started yet.</Typography>
                       <Typography variant="body2">Opens in: {<Countdown date={registrationStartTime * 1000} />}
                       </Typography>
                     </>
@@ -464,39 +470,30 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
                   </Typography>
                   <Grid container spacing={4}>
                   <Grid item xs={12} md={12}>
-                  <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      dataKey="totalVotes"
-                      data={candidates}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={({ account, percent }) => `${account}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {candidates.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend
-                      formatter={(value, entry, index) => candidates[index]?.account || ''}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+  
+                  <PieChart
+                    data={topCandidates}
+                    nameKey="account"
+                    valueKey="totalVotes"
+                    PIE_COLORS={COLORS}
+                    centerLabel="Votes"
+                  />
+
               </Grid>
               
               <Grid item xs={12} md={12}>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={candidates}>
-                    <XAxis dataKey="account" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="totalVotes" fill="#1976d2" />
-                  </BarChart>
-                </ResponsiveContainer>
+
+                <BarChart
+                  data={topCandidates}
+                  dataKey="totalVotes"
+                  xAxisKey="account"
+                  name="Total Votes"
+                  barColors={COLORS}
+                />
+
               </Grid>
             </Grid>
+
           </Box>
          )}
         </>

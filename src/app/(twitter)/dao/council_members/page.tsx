@@ -210,6 +210,7 @@ const CouncilMembersPage = () => {
         ],
         data: {
           electionName: recallData.electionName,
+          member: recallData.councilMember,
           signer: activeSession.auth.actor.toString()
         },
       };

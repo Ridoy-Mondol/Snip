@@ -5,7 +5,6 @@ import { JsonRpc } from 'eosjs';
 import { Box, Typography, Button, Grid, Chip, Divider, LinearProgress, Card, CardContent, Avatar, RadioGroup, FormControlLabel, Radio, } from '@mui/material';
 import { AiOutlineCheckCircle, AiOutlineCloseCircle } from 'react-icons/ai';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import Countdown from "react-countdown";
 
 import { AuthContext } from "@/context/AuthContext";
@@ -15,6 +14,8 @@ import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
 import CircularLoading from "@/components/misc/CircularLoading";
 import { useWallet } from "@/context/WalletContext";
+import PieChart from '@/components/chart/PieChart';
+import BarChart from '@/components/chart/BarChart';
 
 const getProgress = (start: number, end: number) => {
   const now = Date.now();
@@ -225,6 +226,11 @@ const ElectionDetails = () => {
 
   const getCountdown = (timestamp: number) => formatDistanceToNowStrict(new Date(timestamp * 1000), { addSuffix: true });
 
+  const ChartData = [
+    { name: "Keep", votes: keepVotes },
+    { name: "Replace", votes: replaceVotes },
+  ];
+
   return (
     <Box sx={{ p: 4 }}>
       {/* HEADER */}
@@ -233,7 +239,7 @@ const ElectionDetails = () => {
       </Typography>
 
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-        You're participating in the Snipverse recall election to decide the future of a current council member. Your vote matters.
+        You&apos;re participating in the Snipverse recall election to decide the future of a current council member. Your vote matters.
       </Typography>
 
       <Divider sx={{ my: 2 }} />
@@ -266,7 +272,7 @@ const ElectionDetails = () => {
                 <Box sx={{ mb: 4 }}>
                   {votingNotStarted && (
                     <>
-                      <Typography variant="h6">🕒 Voting hasn't started yet.</Typography>
+                      <Typography variant="h6">🕒 Voting hasn&apos;t started yet.</Typography>
                       <Typography variant="body2"> starts in: {<Countdown date={startTime * 1000} />}</Typography>
                     </>
                   )}
@@ -364,43 +370,26 @@ const ElectionDetails = () => {
                   </Typography>
                   <Grid container spacing={4}>
                   <Grid item xs={12} md={12}>
-                  <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      dataKey="votes"
-                      data={[
-                        { name: 'Keep', votes: keepVotes },
-                        { name: 'Replace', votes: replaceVotes }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      <Cell fill="#4caf50" />
-                      <Cell fill="#f44336" />
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                  <PieChart
+                    data={ChartData}
+                    nameKey="name"
+                    valueKey="votes"
+                    PIE_COLORS={["#4caf50", "#f44336"]}
+                    centerLabel="Votes"
+                  />
               </Grid>
               
               {/* bar chart */}
               <Grid item xs={12} md={12}>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart 
-                    data={[
-                      { name: 'Keep', votes: keepVotes },
-                      { name: 'Replace', votes: replaceVotes }
-                    ]}
-                  >
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="votes" fill="#1976d2" />
-                  </BarChart>
-                </ResponsiveContainer>
+                
+                <BarChart
+                  data={ChartData}
+                  dataKey="votes"
+                  xAxisKey="name"
+                  name="Votes"
+                  barColors={["#4caf50", "#f44336"]}
+                />
+
               </Grid>
             </Grid>
           </Box>

@@ -16,27 +16,16 @@ import {
   CardContent
 } from '@mui/material';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from 'recharts';
-import {
   FaWallet,
   FaHistory,
   FaChartPie,
   FaChartBar,
   FaMoneyBillWave,
 } from 'react-icons/fa';
+import GeneralPieChart from '@/components/chart/PieChart';
+import BarChart from '@/components/chart/BarChart';
 
-const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7f7f'];
+const COLORS = ['#ff9800', '#2196f3', '#4caf50', '#f44336'];
 
 interface Proposal {
   id: number;
@@ -152,25 +141,13 @@ const CommunityWalletDashboard = () => {
             <Typography variant="h6" gutterBottom>
               <FaChartPie style={{ marginRight: 8 }} /> Fund Distribution (Current Allocations)
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={ChartData}
-                  dataKey="amount" 
-                  nameKey="category"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
-                  {transactionHistory.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <GeneralPieChart
+              data={ChartData}
+              nameKey="category"
+              valueKey="amount"
+              PIE_COLORS={COLORS}
+              centerLabel="Distribution"
+            />
           </Paper>
         </Grid>
 
@@ -179,15 +156,15 @@ const CommunityWalletDashboard = () => {
             <Typography variant="h6" gutterBottom>
               <FaChartBar style={{ marginRight: 8 }} /> Allocation Breakdown by Category
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="amount" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+            
+            <BarChart
+              data={ChartData}
+              dataKey="amount"
+              xAxisKey="category"
+              name="Amount"
+              barColors={COLORS}
+            />
+
           </Paper>
         </Grid>
 

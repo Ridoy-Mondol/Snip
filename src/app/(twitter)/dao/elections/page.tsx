@@ -419,7 +419,7 @@ const Election = () => {
 
       <Typography variant="body1" color="textSecondary" sx={{ mt: 1, mb: 3 }}>
         Participate in shaping the future of our decentralized community by voting in the latest DAO Council elections.
-        Elect leaders who represent your interests and help guide the protocol's strategic direction.
+        Elect leaders who represent your interests and help guide the protocol&apos;s strategic direction.
       </Typography>
 
       {activeSession && (

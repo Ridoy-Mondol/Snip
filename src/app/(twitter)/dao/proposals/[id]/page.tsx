@@ -5,7 +5,6 @@ import { Box, Typography, Button, Grid, Chip, Divider, LinearProgress, Card, Car
 import { styled } from '@mui/material/styles';
 import { AiOutlineCheckCircle, AiOutlineCloseCircle } from 'react-icons/ai';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import Countdown from "react-countdown";
 
 import { getUser } from "@/utilities/fetch";
@@ -14,6 +13,8 @@ import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
 import CircularLoading from "@/components/misc/CircularLoading";
 import { useWallet } from "@/context/WalletContext";
+import PieChart from '@/components/chart/PieChart';
+import BarChart from '@/components/chart/BarChart';
 
 const getProgress = (start: number, end: number) => {
   const now = Date.now();
@@ -204,6 +205,11 @@ const ProposalDetails = ({ params }: { params: { id: string } }) => {
 
   const getCountdown = (timestamp: number) => formatDistanceToNowStrict(new Date(timestamp * 1000), { addSuffix: true });
 
+  const chartData = [
+    { name: "Yes", votes: yesCount },
+    { name: "No", votes: noCount },
+  ];
+
   return (
     <Box sx={{ p: 4 }}>
       {/* HEADER */}
@@ -357,47 +363,32 @@ const ProposalDetails = ({ params }: { params: { id: string } }) => {
       {((yesCount + noCount > 0) && (votingEnded || isVoted)) && (
         <Box mt={6}>
           <Typography variant="h5" gutterBottom>
-            📊 Recall Vote Distribution
+            📊 Proposal Vote Distribution
           </Typography>
           <Grid container spacing={4}>
           <Grid item xs={12} md={12}>
-          <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              dataKey="votes"
-              data={[
-                { name: 'Yes', votes: yesCount },
-                { name: 'No', votes: noCount }
-              ]}
-              cx="50%"
-              cy="50%"
-              outerRadius={100}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-            >
-              <Cell fill="#4caf50" />
-              <Cell fill="#f44336" />
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+
+          <PieChart
+            data={chartData}
+            nameKey="name"
+            valueKey="votes"
+            PIE_COLORS={["#4caf50", "#f44336"]}
+            centerLabel="Votes"
+          />
+
       </Grid>
               
       {/* bar chart */}
       <Grid item xs={12} md={12}>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart 
-            data={[
-              { name: 'Yes', votes: yesCount },
-              { name: 'No', votes: noCount }
-            ]}
-          >
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="votes" fill="#1976d2" />
-          </BarChart>
-        </ResponsiveContainer>
+        
+        <BarChart
+          data={chartData}
+          dataKey="votes"
+          xAxisKey="name"
+          name="Votes"
+          barColors={["#4caf50", "#f44336"]}
+        />
+
       </Grid>
       </Grid>
      </Box>

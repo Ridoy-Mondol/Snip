@@ -7,6 +7,7 @@ import { FaDollarSign, FaClock, FaChartBar, FaHandHoldingUsd } from 'react-icons
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 import { StatCard } from "@/components/dashboard/StatCard";
+import GeneralPieChart from '@/components/chart/PieChart';
 
 type RevenueRecord = {
   id: number;
@@ -131,53 +132,14 @@ export default function RevenueDashboard() {
               <Typography variant="h6" gutterBottom>
                 Revenue Distribution Per Month
               </Typography>
-              <Container sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-              <Box sx={{ width: 350, height: 350 ,position: "relative" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={currentYearRevenue}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={120}
-                    labelLine={false}
-                    paddingAngle={2}
-                    stroke="transparent"
-                    dataKey="revenueDistributed"
-                    label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                  >
-                    {currentYearRevenue.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Centered Text */}
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  fontSize: "1rem",
-                  fontWeight: "bold",
-                }}
-              >
-                Distribution
-              </Box>
-              </Box>
-              </Container>
-
-              {/* Fund Distribution Legend */}
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
-                {currentYearRevenue.map((item, index) => (
-                  <Box key={index} sx={{ display: "flex", alignItems: "center", fontSize: "0.9rem" }}>
-                  <Box sx={{ width: 12, height: 12, bgcolor: COLORS[index % COLORS.length], borderRadius: "50%", mr: 1 }} />
-                    {item.monthLabel}
-                  </Box>
-                ))}
-              </Box>
+              
+              <GeneralPieChart              
+                data={currentYearRevenue}
+                nameKey="monthLabel"
+                valueKey="revenueDistributed"
+                PIE_COLORS={COLORS}
+                centerLabel="Distribution"
+              />
 
             </CardContent>
           </Card>

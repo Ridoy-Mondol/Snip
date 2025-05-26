@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography, Grid, Paper } from '@mui/material';
-import { FaUniversity, FaUsers, FaVoteYea, FaCoins, FaLandmark } from 'react-icons/fa';
+import { FaUniversity, FaUsers, FaVoteYea, FaCoins } from 'react-icons/fa';
 import { GiMeshNetwork } from 'react-icons/gi';
 
 const aboutItems = [
@@ -38,7 +38,7 @@ const AboutSection = () => {
       </Typography>
 
       <Typography variant="subtitle1" align="left" color="text.secondary" maxWidth="md" mx="auto" mb={5}>
-        Snipverse DAO is a decentralized governance system that empowers community members to shape the platform's future through transparent elections, secure smart contract voting, and shared rewards.
+        Snipverse DAO is a decentralized governance system that empowers community members to shape the platform&apos;s future through transparent elections, secure smart contract voting, and shared rewards.
       </Typography>
 
       <Grid container spacing={4} rowGap={4}>

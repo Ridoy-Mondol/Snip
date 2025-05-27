@@ -234,6 +234,7 @@ const Election = () => {
           registrationEndTime: regEndTimeSec,
           candidateStakeAmount: parseInt(newCandidateStake, 10),
           voterStakeAmount: parseInt(newVoterStake, 10),
+          signer: activeSession.auth.actor.toString(),
         },
       };
 

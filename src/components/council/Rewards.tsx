@@ -59,17 +59,21 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
   const [share, setShare] = useState<number>();
   const [tokenContract, setTokenContract] = useState("");
 
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
+  const tokenAcc = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ACC!;
+
   const handleChange = (event: any, newValue: any) => {
     setValue(newValue);
   };
 
   const fetchProposals = async () => {
       try {
-      const rpc = new JsonRpc('https://tn1.protonnz.com');
+      const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
           json: true,
-          code: 'snipvote',
-          scope: 'snipvote',
+          code: contractAcc,
+          scope: contractAcc,
           table: 'fundprops',
           limit: 100,
       });
@@ -100,7 +104,7 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'updtfundcfg',
         authorization: [
           {
@@ -150,9 +154,9 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
   const permission = activeSession.auth.permission.toString();
 
   let pubKey: string | undefined;
-
+  let PROTON_API = process.env.NEXT_PUBLIC_PROTON_ACCOUNT_API;
   try {
-    const response = await fetch("https://testnet.protonchain.com/v1/chain/get_account", {
+    const response = await fetch(PROTON_API!, {
       method: "POST",
       body: JSON.stringify({ account_name: actor }),
     });
@@ -208,7 +212,7 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
                 accounts: [
                   {
                     permission: {
-                      actor: 'snipvote',
+                      actor: contractAcc,
                       permission: 'eosio.code',
                     },
                     weight: 1,
@@ -229,7 +233,7 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
             ],
             data: {
               account: actor,
-              code: 'snipx',
+              code: tokenAcc,
               type: 'transfer', 
               requirement: 'fund',
             },
@@ -267,7 +271,7 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'votefprop',
         authorization: [
           {
@@ -314,7 +318,7 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'setfstatus',
         authorization: [
           {
@@ -403,7 +407,7 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
                     <TableCell>ID</TableCell>
                     <TableCell>Proposer</TableCell>
                     <TableCell>Recipient</TableCell>
-                    <TableCell>Amount(SNIPX)</TableCell>
+                    <TableCell>Amount(SNIPS)</TableCell>
                     <TableCell>Category</TableCell>
                     <TableCell>Approved</TableCell>
                     <TableCell>Rejected</TableCell>
@@ -489,7 +493,7 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
                     <TableCell>ID</TableCell>
                     <TableCell>Proposer</TableCell>
                     <TableCell>Recipient</TableCell>
-                    <TableCell>Amount(SNIPX)</TableCell>
+                    <TableCell>Amount(SNIPS)</TableCell>
                     <TableCell>Category</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Approved</TableCell>
@@ -546,7 +550,7 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>Type</TableCell>
-                  <TableCell>Amount(SNIPX)</TableCell>
+                  <TableCell>Amount(SNIPS)</TableCell>
                   <TableCell>Date</TableCell>
                 </TableRow>
               </TableHead>

@@ -204,8 +204,8 @@ const CouncilReviewPanel = ({token, setSnackbar}: any) => {
     const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
       json: true,
-      code: 'snipvote',
-      scope: 'snipvote',
+      code: contractAcc,
+      scope: contractAcc,
       table: 'reportvotes',
       limit: 100,
     });

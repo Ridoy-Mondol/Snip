@@ -22,6 +22,8 @@ const RevenueForm: React.FC<Props> = ({ open, onClose, activeSession, connectWal
   const [totalRevenue, setTotalRevenue] = useState<number>();
   const [percent, setPercent] = useState<number>();
 
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
+
   const handleSubmit = async () => {
     const availablebalance = await fetchToken();
     if (!availablebalance) {
@@ -45,7 +47,7 @@ const RevenueForm: React.FC<Props> = ({ open, onClose, activeSession, connectWal
 
     try {
       const action = {
-        account: 'snipvote',
+        account: contractAcc,
         name: 'sendrevenue',
         authorization: [
           {

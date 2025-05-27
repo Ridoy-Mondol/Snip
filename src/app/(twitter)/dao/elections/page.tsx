@@ -32,6 +32,7 @@ import EmptyState from '@/components/dashboard/EmptyState';
 const Election = () => {
   const [elections, setElections] = useState<any[]>([]);
   const [recallData, setRecallData] = useState<any[]>([]);
+  const [founder, setFounder] = useState<any[]> ([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newElectionName, setNewElectionName] = useState('');
   const [newRegistrationStartTime, setNewRegistrationStartTime] = useState('');
@@ -84,9 +85,36 @@ const Election = () => {
     }
   };
 
+  const fetchFounders = async () => {
+    try {
+      const rpc = new JsonRpc(endpoint);
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: contractAcc,
+        scope: contractAcc,
+        table: 'founders',
+        lower_bound: activeSession.auth.actor.toString(),
+        limit: 1,
+      });
+      setFounder(result.rows);
+  
+    } catch (error) {
+      console.error('Failed to fetch member:', error);
+    }
+  };
+  
+  const permission =
+    !!activeSession?.auth?.actor?.toString() &&
+    Array.isArray(founder) &&
+    founder.some(
+    (founder: any) =>
+      founder?.account === activeSession.auth.actor.toString()
+  );
+
   useEffect(() => {
     fetchElections();
     fetchRecallElections();
+    fetchFounders();
   }, []);
 
   const openCreateDialog = () => {
@@ -422,7 +450,7 @@ const Election = () => {
         Elect leaders who represent your interests and help guide the protocol&apos;s strategic direction.
       </Typography>
 
-      {activeSession && (
+      {permission && (
         <Button variant="contained" color="secondary" onClick={openCreateDialog} style={{ marginBottom: '10px' }}>
           Create New Election
         </Button>

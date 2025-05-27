@@ -6,10 +6,6 @@ import { Box, Container, Grid, Typography } from "@mui/material";
 import DaoHeader from "@/components/dashboard/DaoHeader";
 import KeyMetrics from "@/components/dashboard/KeyMetrics";
 import RecentElections from "@/components/dashboard/RecentElections";
-import VotingData from "@/components/dashboard/VotingData";
-import CommunityWallet from "@/components/dashboard/CommunityWallet";
-import CouncilMembers from "@/components/dashboard/CouncilMembers";
-import RecallVote from "@/components/dashboard/RecallVote";
 import RecentProposals from '@/components/dashboard/RecentProposals';
 import RecentTransaction from '@/components/dashboard/RecentTransaction';
 import AboutSection from '@/components/dashboard/About';
@@ -46,19 +42,18 @@ export default function DaoDashboard() {
     }
   };
 
-  const fetchWinners = async () => {
+  const fetchMembers = async () => {
     try {
       const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
         code: contractAcc,
         scope: contractAcc,
-        table: 'winners',
+        table: 'council',
         limit: 100,
       });
-      const currentMember = result.rows.filter((m) => (m.status === "active"));
     
-      setMembers(currentMember);
+      setMembers(result.rows);
     
     } catch (error) {
       console.error('Failed to fetch member:', error);
@@ -179,7 +174,7 @@ export default function DaoDashboard() {
 
   useEffect(() => {
     fetchElections();
-    fetchWinners();
+    fetchMembers();
     fetchModerators();
     fetchProposals();
     fetchToken();
@@ -237,18 +232,6 @@ export default function DaoDashboard() {
         </Grid>
         </Grid>
       
-        {/* <Grid item xs={12} md={12}>
-          <VotingData />
-        </Grid>
-        <Grid item xs={12} md={12}>
-          <CommunityWallet />
-        </Grid>
-        <Grid item xs={12} md={12}>
-          <CouncilMembers />
-        </Grid>
-        <Grid item xs={12}>
-          <RecallVote />
-        </Grid> */}
       </Grid>
     </Container>
   );

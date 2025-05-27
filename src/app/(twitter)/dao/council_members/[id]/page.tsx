@@ -65,17 +65,17 @@ export default function MemberProfile({ params }: { params: { id: string } }) {
     }
   };
 
-  const fetchWinners = async () => {
+  const fetchMembers = async () => {
     try {
     const rpc = new JsonRpc(endpoint);
     const result = await rpc.get_table_rows({
       json: true,
       code: contractAcc,
       scope: contractAcc,
-      table: 'winners',
+      table: 'council',
       limit: 100,
     });
-    const currentMember = result.rows.filter((m) => (m.status === "active" && m.winner === member));
+    const currentMember = result.rows.filter((m) => (m.account === member));
   
     const memberImg = await getCachedUser(currentMember[0].userName)
 
@@ -91,7 +91,7 @@ export default function MemberProfile({ params }: { params: { id: string } }) {
      
   useEffect(() => {
     fetchMemPerformance();
-    fetchWinners();
+    fetchMembers();
   }, [])
 
   const currentYearPerformance = useMemo(() => {
@@ -194,7 +194,7 @@ export default function MemberProfile({ params }: { params: { id: string } }) {
               {member}
             </Typography>
             <Typography variant="body1" color="text.secondary" mt={0.5}>
-              Current Member Status: <strong style={{ color: '#4caf50' }}>{memberInfo.status}</strong>
+              Current Member Status: <strong style={{ color: '#4caf50' }}>Active</strong>
             </Typography>
           </Box>
         </Box>

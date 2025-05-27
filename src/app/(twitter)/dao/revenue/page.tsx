@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { JsonRpc } from 'eosjs';
-import { Box, Card, CardContent, Typography, Grid, Container } from '@mui/material';
+import { Card, CardContent, Typography, Grid, Container } from '@mui/material';
 import { FaDollarSign, FaClock, FaChartBar, FaHandHoldingUsd } from 'react-icons/fa';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { StatCard } from "@/components/dashboard/StatCard";
 import GeneralPieChart from '@/components/chart/PieChart';
@@ -69,21 +69,31 @@ export default function RevenueDashboard() {
 
    const currentYear = new Date().getUTCFullYear();
 
-   const currentYearRevenue = revenue.filter((r) => {
-     const recordYear = new Date(r.timestamp * 1000).getUTCFullYear();
-     return recordYear === currentYear;
-  })
-  .map((r) => {
+   const monthlyRevenueMap = Array.from({ length: 12 }, (_, index) => ({
+     monthIndex: index,
+     totalRevenue: 0,
+     revenueDistributed: 0,
+   }));
+
+   revenue.forEach((r) => {
      const date = new Date(r.timestamp * 1000);
-     const monthIndex = date.getUTCMonth();
-     const total = Number(r.totalRevenue) / 10000;
-     const distributed = total * (Number(r.percentToDistribute) / 100);
-     return {
-      totalRevenue: total,
-      revenueDistributed: distributed,
-      monthLabel: MONTHS[monthIndex],
-     };
-  });
+     const recordYear = date.getUTCFullYear();
+
+     if (recordYear === currentYear) {
+       const monthIndex = date.getUTCMonth();
+       const total = Number(r.totalRevenue) / 10000;
+       const distributed = total * (Number(r.percentToDistribute) / 100);
+
+       monthlyRevenueMap[monthIndex].totalRevenue += total;
+       monthlyRevenueMap[monthIndex].revenueDistributed += distributed;
+     }
+   });
+
+   const currentYearRevenue = monthlyRevenueMap.map((entry) => ({
+     monthLabel: MONTHS[entry.monthIndex],
+     totalRevenue: entry.totalRevenue,
+     revenueDistributed: entry.revenueDistributed,
+   }));
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -96,16 +106,16 @@ export default function RevenueDashboard() {
            
       <Grid container spacing={6} mt={0}>
         <Grid item xs={12} md={6}>
-          <StatCard icon={<FaChartBar />} label="Total Revenue Generated" value={`${totalRevenue} SNIPX`} />
+          <StatCard icon={<FaChartBar />} label="Total Revenue Generated" value={`${totalRevenue} SNIPS`} />
         </Grid>
         <Grid item xs={12} md={6}>
-          <StatCard icon={<FaClock />} label="Revenue This Month" value={`${lastRevenue} SNIPX`} />
+          <StatCard icon={<FaClock />} label="Revenue This Month" value={`${lastRevenue} SNIPS`} />
         </Grid>
         <Grid item xs={12} md={6}>
-          <StatCard icon={<FaHandHoldingUsd />} label="Total Revenue Shared" value={`${totalRevenueShared} SNIPX`} />
+          <StatCard icon={<FaHandHoldingUsd />} label="Total Revenue Shared" value={`${totalRevenueShared} SNIPS`} />
         </Grid>
         <Grid item xs={12} md={6}>
-          <StatCard icon={<FaDollarSign />} label="Shared This Month" value={`${lastRevenueShared} SNIPX`} />
+          <StatCard icon={<FaDollarSign />} label="Shared This Month" value={`${lastRevenueShared} SNIPS`} />
         </Grid>
 
         <Grid item xs={12} md={12}>

@@ -14,32 +14,19 @@ import {
   Paper,
   Avatar,
   Button,
-  Tabs,
-  Tab,
   Box,
   TextField,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Card,
-  CardContent,
   Stack,
 } from '@mui/material';
 import {
-  FaUserCircle,
-  FaChartPie,
-  FaFileAlt,
   FaUsersCog,
-  FaFlag,
-  FaWallet,
-  FaRegBell,
   FaCaretRight,
 } from 'react-icons/fa';
-import { MdGavel, MdPersonAdd, MdPersonRemove } from 'react-icons/md';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers';
+import { MdGavel } from 'react-icons/md';
 
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
@@ -51,23 +38,20 @@ import EmptyState from '@/components/dashboard/EmptyState';
 
 const ModeratorPage = () => {
   const [moderators, setModerators] = useState<any>([]);
+  const [members, setMembers] = useState<any>([]);
   const [showRecallForm, setShowRecallForm] = useState(false);
   const [recalledMod, setRecalledMod] = useState("");
   const [reason, setReason] = useState("");
   const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
   
   const { activeSession, connectWallet } = useWallet();
-  const permission =
-    activeSession?.auth?.actor?.toString() === "snipvote" ||
-    activeSession?.auth?.actor?.toString() === "ahatashamul" ||
-    activeSession?.auth?.actor?.toString() === "ahatashamul1";
 
   const { token } = useContext(AuthContext);
-  const now = Math.floor(Date.now() / 1000);
   const router = useRouter();
 
   useEffect(() => {
     fetchModerators();
+    fetchMembers();
   }, []);
   
   const getCachedUser = async (username: string) => {
@@ -112,6 +96,32 @@ const ModeratorPage = () => {
       console.error('Failed to fetch moderator:', error);
     }
   };
+
+  const fetchMembers = async () => {
+    try {
+      const rpc = new JsonRpc(endpoint);
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: contractAcc,
+        scope: contractAcc,
+        table: 'council',
+        limit: 100,
+      });
+  
+      setMembers(result.rows);
+  
+    } catch (error) {
+      console.error('Failed to fetch member:', error);
+    }
+  };
+  
+  const isMember =
+  !!activeSession?.auth?.actor?.toString() &&
+  Array.isArray(members) &&
+  members.some(
+    (member: any) =>
+      member?.account === activeSession.auth.actor.toString()
+  );
 
   const handleApply = async () => {
     if (!activeSession) {
@@ -267,7 +277,7 @@ const ModeratorPage = () => {
                 <TableCell>Name</TableCell>
                 <TableCell>Approval</TableCell>
                 <TableCell>Profile</TableCell>
-                {permission &&
+                {isMember &&
                 <TableCell>Recall</TableCell>
                 }
               </TableRow>
@@ -293,7 +303,7 @@ const ModeratorPage = () => {
                     </Button>
                     </TableCell>
                     {
-                    permission &&
+                    isMember &&
                     <TableCell>
                       <Button size="small" color="error" startIcon={<MdGavel />} 
                       onClick={() => {

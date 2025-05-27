@@ -81,10 +81,10 @@ const ElectionDetails = () => {
         json: true,
         code: contractAcc,
         scope: contractAcc,
-        table: 'winners',
+        table: 'council',
         limit: 100,
       });
-      const currentMember = result.rows.filter((m) => (m.electionName === election && m.winner === member));
+      const currentMember = result.rows.filter((m) => (m.electionName === election && m.account === member));
       
       const userFetchPromises = currentMember.map(async (member) => {
         try {
@@ -118,7 +118,6 @@ const ElectionDetails = () => {
       }
       const rpc = new JsonRpc(endpoint);
       const actorName = activeSession.auth.actor.toString();
-      console.log('Querying voter for:', actorName);
       const result = await rpc.get_table_rows({
         json: true,
         code: contractAcc,
@@ -131,7 +130,6 @@ const ElectionDetails = () => {
         (row: any) =>
           row.voter === actorName && row.electionName === election
       );
-      console.log('filtered', filtered);
       if (filtered.length > 0) {
         setIsVoted(true);
       }

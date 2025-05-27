@@ -155,7 +155,11 @@ const ModeratorRecallSection = ({ getFullURL, setSnackbar }: ModeratorRecallSect
       });
     } catch (error) {
       console.error('Vote failed:', error);
-      alert('Voting failed. See console for details.');
+      setSnackbar({
+        message: 'Voting failed.',
+        severity: 'error',
+        open: true,
+      });
     }
   };
 

@@ -132,7 +132,7 @@ const CommunityWalletDashboard = () => {
       </Typography>
 
       <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-        <FaMoneyBillWave style={{ marginRight: 8 }} /> Total Balance: {totalBalance} SNIPX
+        <FaMoneyBillWave style={{ marginRight: 8 }} /> Total Balance: {totalBalance} SNIPS
       </Typography>
 
       <Grid container spacing={4}>
@@ -181,7 +181,7 @@ const CommunityWalletDashboard = () => {
                       <TableCell>ID</TableCell>
                       <TableCell>Recipient</TableCell>
                       <TableCell>Type</TableCell>
-                      <TableCell>Amount(SNIPX)</TableCell>
+                      <TableCell>Amount(SNIPS)</TableCell>
                       <TableCell>Date</TableCell>
                       </TableRow>
                   </TableHead>

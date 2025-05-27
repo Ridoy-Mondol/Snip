@@ -17,7 +17,7 @@ import { MdGavel } from "react-icons/md";
 import { MdGroups } from "react-icons/md";
 
 type Member = {
-  winner: string;
+  account: string;
   photoUrl?: string;
   isFoundingMember: boolean;
   rank: number;
@@ -88,7 +88,7 @@ const Members = ({
                     <TableCell>
                       <Box display="flex" alignItems="center" gap={1}>
                         <Avatar src={member.photoUrl && getFullURL(member.photoUrl)} />
-                        {member.winner}
+                        {member.account}
                       </Box>
                     </TableCell>
                     <TableCell>
@@ -100,7 +100,7 @@ const Members = ({
                         variant="outlined"
                         startIcon={<FaCaretRight />}
                         onClick={() =>
-                          router.push(`/dao/council_members/${member.winner}`)
+                          router.push(`/dao/council_members/${member.account}`)
                         }
                       >
                         Visit
@@ -114,7 +114,7 @@ const Members = ({
                           startIcon={<MdGavel />}
                           onClick={() => {
                             setShowRecallForm(true);
-                            setRecalledMember(member.winner);
+                            setRecalledMember(member.account);
                             setRecalledMod("");
                             setRecalledElection(member.electionName);
                           }}

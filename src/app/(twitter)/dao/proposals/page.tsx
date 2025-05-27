@@ -44,6 +44,7 @@ import EmptyState from "@/components/dashboard/EmptyState";
 
 export default function ProposalPage() {
   const [tab, setTab] = useState<'active' | 'past'>('active');
+  const [members, setMembers] = useState<any>([]);
   const [isPropDialogOpen, setIsPropDialogOpen] = useState(false);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -61,37 +62,60 @@ export default function ProposalPage() {
   const router = useRouter();
   
   const { activeSession, connectWallet } = useWallet();
-  const permission =
-    activeSession?.auth?.actor?.toString() === "snipvote" ||
-    activeSession?.auth?.actor?.toString() === "ahatashamul" ||
-    activeSession?.auth?.actor?.toString() === "ahatashamul5";
 
   useEffect(() => {
     fetchProposals();
+    fetchMembers();
   }, []);
 
   const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
   const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
 
   const fetchProposals = async () => {
-      try {
-        const rpc = new JsonRpc(endpoint);
-        const result = await rpc.get_table_rows({
-          json: true,
-          code: contractAcc,
-          scope: contractAcc,
-          table: 'proposals',
-          limit: 100,
-        });
+    try {
+      const rpc = new JsonRpc(endpoint);
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: contractAcc,
+        scope: contractAcc,
+        table: 'proposals',
+        limit: 100,
+      });
 
-        let activeProposals = result.rows.filter((p) => p.deadline > now);
-        let pastProposals = result.rows.filter((p) => p.deadline < now);
-        setActiveProposals(activeProposals);
-        setPastProposals(pastProposals);
-      } catch (error) {
-        console.error('Failed to fetch moderator:', error);
-      }
+      let activeProposals = result.rows.filter((p) => p.deadline > now);
+      let pastProposals = result.rows.filter((p) => p.deadline < now);
+      setActiveProposals(activeProposals);
+      setPastProposals(pastProposals);
+    } catch (error) {
+      console.error('Failed to fetch moderator:', error);
+    }
   };
+
+  const fetchMembers = async () => {
+    try {
+      const rpc = new JsonRpc(endpoint);
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: contractAcc,
+        scope: contractAcc,
+        table: 'council',
+        limit: 100,
+      });
+  
+      setMembers(result.rows);
+  
+    } catch (error) {
+      console.error('Failed to fetch member:', error);
+    }
+  };
+  
+  const isFounder =
+  !!activeSession?.auth?.actor?.toString() &&
+  Array.isArray(members) &&
+  members.some(
+    (member: any) =>
+      member?.account === activeSession.auth.actor.toString() && member?.isFoundingMember === true
+  );
 
   const submitProposal = async () => {
     if (!activeSession) {
@@ -297,7 +321,7 @@ export default function ProposalPage() {
         >
           Create Proposal
         </Button>
-        {permission && (
+        {isFounder && (
           <>
             <Button
               variant="outlined"

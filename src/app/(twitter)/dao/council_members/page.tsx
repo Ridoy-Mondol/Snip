@@ -5,6 +5,7 @@ import {
   Container,
   Typography,
   Button,
+  Stack
 } from '@mui/material';
 import { FaUsersCog } from 'react-icons/fa';
 
@@ -22,6 +23,7 @@ import RecallForm from '@/components/form/Recall';
 import FundProposal from '@/components/form/FundProposal';
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
+import FoundersForm from '@/components/form/FoundersForm';
 
 const CouncilMembersPage = () => {
   const [selectedElection, setSelectedElection] = useState<any>(null);
@@ -33,16 +35,11 @@ const CouncilMembersPage = () => {
   const [recalledElection, setRecalledElection] = useState("");
   const [wallet, setWallet] = useState("");
   const [fundForm, setFundForm] = useState(false);
+  const [foundersForm, setFoundersForm] = useState(false);
   const [revenueForm, setRevenueForm] = useState(false);
   const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
   const { activeSession, connectWallet } = useWallet();
-
-  const permission =
-    activeSession?.auth?.actor?.toString() === "snipvote" ||
-    activeSession?.auth?.actor?.toString() === "ahatashamul" ||
-    activeSession?.auth?.actor?.toString() === "ahatashamul5" ||
-    activeSession?.auth?.actor?.toString() === "ahatashamul2";
   
   const now = Math.floor(Date.now() / 1000);
   const { token } = useContext(AuthContext);
@@ -50,12 +47,13 @@ const CouncilMembersPage = () => {
   useEffect(() => {
     fetchElections();
     fetchRecallElections();
-    fetchWinners();
+    fetchMembers();
   }, [])
 
   const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
   const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
   const tokenAcc = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ACC!;
+  const authorizedAccounts = process.env.NEXT_PUBLIC_AUTHORIZED_ACCOUNTS?.split(',') || [];
 
   const fetchElections = async () => {
     try {
@@ -87,7 +85,7 @@ const CouncilMembersPage = () => {
       const filteredRecall = result.rows.filter((e) => (e.endTime < now && e.status === "ongoing"));
       setRecallData(filteredRecall[0]);
     } catch (error) {
-      console.error('Failed to fetch elections:', error);
+      console.error('Failed to fetch recall elections:', error);
     }
   };
   
@@ -103,19 +101,18 @@ const CouncilMembersPage = () => {
     return userData.user;
   };
   
-  const fetchWinners = async () => {
+  const fetchMembers = async () => {
     try {
       const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
         code: contractAcc,
         scope: contractAcc,
-        table: 'winners',
+        table: 'council',
         limit: 100,
       });
-      const currentMember = result.rows.filter((m) => (m.status === "active"));
 
-      const userFetchPromises = currentMember.map(async (member) => {
+      const userFetchPromises = result.rows.map(async (member) => {
         try {
           const userData = await getCachedUser(member.userName);
           return { ...member, photoUrl: userData.photoUrl };
@@ -138,8 +135,15 @@ const CouncilMembersPage = () => {
   Array.isArray(members) &&
   members.some(
     (member: any) =>
-      member?.winner === activeSession.auth.actor.toString() &&
-      member?.status === "active"
+      member?.account === activeSession.auth.actor.toString()
+  );
+
+  const isFounder =
+  !!activeSession?.auth?.actor?.toString() &&
+  Array.isArray(members) &&
+  members.some(
+    (member: any) =>
+      member?.account === activeSession.auth.actor.toString() && member?.isFoundingMember === true
   );
 
   const declareMembers = async () => {
@@ -265,8 +269,6 @@ const CouncilMembersPage = () => {
         scope: wallet,
         table: 'accounts',
       });
-  
-      console.log('token from table', result.rows);
 
       const balanceStr = result?.rows?.[0]?.balance;
       if (!balanceStr) return null;
@@ -290,22 +292,36 @@ const CouncilMembersPage = () => {
         Explore the Snipverse Council Members section to learn about our elected leaders and their roles. Stay informed about their contributions to our decentralized community.
       </Typography>
 
-      {
-        (permission && selectedElection) && <Button onClick={declareMembers}>Declare Members</Button>
-      }
+      <Stack spacing={2} direction="row" flexWrap="wrap" gap={2}>
+        {(isFounder && selectedElection) && (
+          <Button variant="contained" color="primary" onClick={declareMembers}>
+            Declare Members
+          </Button>
+        )}
 
-      {
-        (permission && recallData) && <Button onClick={declareRecall}>Declare Recall</Button>
-      }
+        {(isFounder && recallData) && (
+          <Button variant="contained" color="secondary" onClick={declareRecall}>
+            Declare Recall
+          </Button>
+        )}
 
-      {
-        permission && <Button onClick={() => setRevenueForm(true)}>Share Revenue</Button>
+        {isFounder && (
+          <Button variant="outlined" color="warning" onClick={() => setRevenueForm(true)}>
+            Share Revenue
+          </Button>
+        )}
+      </Stack>
+
+      { authorizedAccounts.includes(activeSession?.auth?.actor) &&
+      <Button variant="outlined" color="success" onClick={() => setFoundersForm(true)}>
+        Set Founders
+      </Button>
       }
 
       {/* Council members */}
       <Members
         members={members}
-        permission={permission}
+        permission={isFounder}
         getFullURL={getFullURL}
         setShowRecallForm={setShowRecallForm}
         setRecalledMember={setRecalledMember}
@@ -379,6 +395,15 @@ const CouncilMembersPage = () => {
         activeSession= {activeSession}
         connectWallet={connectWallet}
         fetchToken={fetchToken}
+        setSnackbar={setSnackbar}
+      />
+      
+      {/* Form for adding founding members */}
+      <FoundersForm
+        open={foundersForm}
+        onClose={() => setFoundersForm(false)}
+        activeSession={activeSession}
+        connectWallet={connectWallet}
         setSnackbar={setSnackbar}
       />
       

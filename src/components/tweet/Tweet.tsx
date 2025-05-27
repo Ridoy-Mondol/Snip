@@ -23,6 +23,8 @@ import ProfileCard from "../user/ProfileCard";
 import CircularLoading from "../misc/CircularLoading";
 import { LinearProgress, Button, IconButton, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { speakText } from "@/utilities/textToSpeech";
+import CustomSnackbar from "@/components/misc/CustomSnackbar";
+import { SnackbarProps } from "@/types/SnackbarProps";
 
 export default function Tweet({ tweet }: { tweet: TweetProps }) {
     const [activeSession, setActiveSession] = useState<any>(null);
@@ -42,65 +44,70 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [newReason, setNewReason] = useState("");
     const [newCategory, setNewCategory] = useState("");
+    const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
     const { token } = useContext(AuthContext);
     const router = useRouter();
 
+    const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+    const chainId = process.env.NEXT_PUBLIC_CHAIN_ID;
+    const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
+
     useEffect(() => {
-          const restore = async () => {
-            try {
-              const { link, session } = await ProtonWebSDK({
-                linkOptions: {
-                  chainId: '71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd',
-                  endpoints: ['https://tn1.protonnz.com'],
-                  restoreSession: true,
-                },
-                transportOptions: {
-                  requestAccount: 'snipvote',
-                },
-                selectorOptions: {
-                  appName: 'Snipverse',
-                },
-              });
+      const restore = async () => {
+        try {
+          const { link, session } = await ProtonWebSDK({
+            linkOptions: {
+              chainId: chainId,
+              endpoints: [endpoint],
+              restoreSession: true,
+            },
+            transportOptions: {
+              requestAccount: contractAcc,
+            },
+            selectorOptions: {
+              appName: 'Snipverse',
+            },
+          });
         
-              if (session && link) {
-                setActiveSession(session);
-                setActiveLink(link);
-              } else {
-                console.log('ℹ️ No session found or session invalid.');
-              }
-            } catch (error) {
-              console.error('❌ Error during session restoration:', error);
-            }
-          };
-        
-          restore();
-        }, []);
-      
-        const connectWallet = async () => {
-          try {
-            const { link, session } = await ProtonWebSDK({
-              linkOptions: {
-                endpoints: ["https://tn1.protonnz.com"],
-                chainId: "71ee83bcf52142d61019d95f9cc5427ba6a0d7ff8accd9e2088ae2abeaf3d3dd",
-                restoreSession: false,
-              },
-              transportOptions: {
-                requestAccount: "snipvote",
-              },
-              selectorOptions: {
-                appName: "Snipverse",
-              },
-            });
-      
-            if (session) {
-              setActiveSession(session);
-              setActiveLink(link);
-            }
-          } catch (error) {
-            console.error("Wallet connection failed:", error);
+          if (session && link) {
+            setActiveSession(session);
+            setActiveLink(link);
+          } else {
+            console.log('ℹ️ No session found or session invalid.');
           }
-        };
+        } catch (error) {
+          console.error('❌ Error during session restoration:', error);
+        }
+      };
+        
+      restore();
+    }, []);
+      
+    const connectWallet = async () => {
+      try {
+        const { link, session } = await ProtonWebSDK({
+          linkOptions: {
+            endpoints: [endpoint],
+            chainId: chainId,
+            restoreSession: false,
+          },
+          transportOptions: {
+            requestAccount: contractAcc,
+          },
+          selectorOptions: {
+            appName: "Snipverse",
+          },
+        });
+      
+        if (session) {
+          setActiveSession(session);
+          setActiveLink(link);
+        }
+      } catch (error) {
+        console.error("Wallet connection failed:", error);
+      }
+    };
 
     const handleTweetClick = () => {
         router.push(`/${tweet.author.username}/tweets/${tweet.id}`);
@@ -275,15 +282,14 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
 
       const fetchModerators = async () => {
         if (!activeSession?.auth?.actor) {
-          console.warn("No active session or actor found.");
           return;
         }
         try {
-          const rpc = new JsonRpc('https://tn1.protonnz.com');
+          const rpc = new JsonRpc(endpoint);
           const result = await rpc.get_table_rows({
             json: true,
-            code: 'snipvote',
-            scope: 'snipvote',
+            code: contractAcc,
+            scope: contractAcc,
             table: 'moderators',
             limit: 100,
           });
@@ -305,22 +311,35 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
 
       const handleReport = async (postId: string, username: string) => {
         if (!activeSession) {
+          setSnackbar({
+            message: "Please connect wallet first!",
+            severity: "error",
+            open: true,
+          });
           connectWallet();
           return;
         }
 
         if (!newReason.trim()) {
-          alert('Reason cannot be empty.');
+          setSnackbar({
+            message: 'Reason cannot be empty.',
+            severity: "error",
+            open: true,
+          });
           return;
         }
         if (!newCategory.trim()) {
-          alert('Select a Category.');
+          setSnackbar({
+            message: 'Select a Category.',
+            severity: "error",
+            open: true,
+          });
           return;
         }
     
         try {
           const action = {
-            account: 'snipvote',
+            account: contractAcc,
             name: 'reportpost',
             authorization: [
               {
@@ -345,28 +364,31 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
             }
           );
           
-        //   setSnackbar({
-        //     message: `You successfully voted in this proposal!`,
-        //     severity: "success",
-        //     open: true,
-        //   });
+          setSnackbar({
+            message: `You successfully report this post!`,
+            severity: "success",
+            open: true,
+          });
         setIsReportDialogOpen(false);
-        alert("Successfully report this post");
         await fetchReports(postId, username);
     
         } catch (error: any) {
           console.error('Vote failed:', error);
-          alert("Report failed");
+          setSnackbar({
+            message: "Report failed!",
+            severity: "error",
+            open: true,
+          });
         }
       }
 
       const fetchReports = async (postId: string, username: string) => {
       try {
-        const rpc = new JsonRpc('https://tn1.protonnz.com');
+        const rpc = new JsonRpc(endpoint);
         const result = await rpc.get_table_rows({
           json: true,
-          code: 'snipvote',
-          scope: 'snipvote',
+          code: contractAcc,
+          scope: contractAcc,
           table: 'modreports',
           limit: 100,
         });
@@ -397,8 +419,6 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
           if (!res.ok) {
             throw new Error(data.message || 'Failed to hide post');
           }
-      
-          console.log('Post successfully hidden');
         } catch (error) {
           console.error('Failed to hide post:', error);
         }
@@ -725,7 +745,11 @@ export default function Tweet({ tweet }: { tweet: TweetProps }) {
             </DialogActions>
             </div>
             </Dialog>
-
+            
+            {/* snackbar */}
+              {snackbar.open && (
+              <CustomSnackbar message={snackbar.message} severity={snackbar.severity} setSnackbar={setSnackbar} />
+            )}
 
             
         </motion.div>

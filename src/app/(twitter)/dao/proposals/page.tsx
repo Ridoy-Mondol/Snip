@@ -56,6 +56,7 @@ export default function ProposalPage() {
   const [voterStake, setVoterStake] = useState('');
   const [activeProposals, setActiveProposals] = useState<any>([]);
   const [pastProposals, setPastProposals] = useState<any>([]);
+  const [shouldClose, setShouldClose] = useState<any>([]);
   const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
   const { token } = useContext(AuthContext);
@@ -85,8 +86,10 @@ export default function ProposalPage() {
 
       let activeProposals = result.rows.filter((p) => p.deadline > now);
       let pastProposals = result.rows.filter((p) => p.deadline < now);
+      let shouldClose = result.rows.filter((p) => p.deadline < now && p.status === "open");
       setActiveProposals(activeProposals);
       setPastProposals(pastProposals);
+      setShouldClose(shouldClose);
     } catch (error) {
       console.error('Failed to fetch moderator:', error);
     }
@@ -334,7 +337,8 @@ export default function ProposalPage() {
             >
               Update Config
             </Button>
-
+            {
+            shouldClose.length > 0 &&
             <Button
               variant="contained"
               color="error"
@@ -343,6 +347,7 @@ export default function ProposalPage() {
             >
               Close Proposals
             </Button>
+            }
           </>
         )}
       </Box>

@@ -526,7 +526,7 @@ const ElectionDetails = ({ params }: { params: { id: string } }) => {
             }}
           >
             <Typography variant="h6" gutterBottom>
-              {action === "register" ? `Are you sure you want to register as a candidate?` : action === "vote" ? `Are you sure you want to vote ${votedCandidate}?` : `Are you sure you want to withdraw you registration?`}
+              {action === "register" ? `Are you sure you want to register as a candidate?` : action === "vote" ? `Are you sure you want to vote ${votedCandidate}?` : `Are you sure you want to withdraw your registration?`}
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
               <Button variant="outlined" color="primary" onClick={() => setShowModal(false)}>

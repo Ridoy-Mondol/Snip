@@ -241,8 +241,11 @@ export default function DaoDashboardLayout({ children }: { children: ReactNode }
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <MdAccountBalanceWallet size={20} color="white" />
               <Typography variant="subtitle2" color="white" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                {activeSession.auth.actor.substring(0, 6)}...{activeSession.auth.actor.substring(activeSession.auth.actor.length - 4)}
+                {activeSession.auth.actor.length > 8
+                  ? `${activeSession.auth.actor.slice(0, 5)}...${activeSession.auth.actor.slice(-3)}`
+                  : activeSession.auth.actor}
               </Typography>
+
               <Button
                 color="inherit"
                 variant="outlined"

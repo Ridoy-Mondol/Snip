@@ -141,7 +141,25 @@ const getAnnouncements = (
         sortTimestamp: regEndTime.getTime(),
       });
     }
-    // 3. Election Registration Starting Soon (Medium Priority)
+
+    // 3. Voting Starting Soon (High Priority)
+    else if (regEndTime < now && startTime > now) {
+      const daysUntilVote = Math.ceil((startTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      announcements.push({
+        id: `el-vote-soon-${election.electionName}`,
+        title: `${election.electionName} - Voting Soon!`,
+        description: `Voting for this election will begin soon. Get ready to participate.`,
+        type: 'election_vote',
+        dateInfo: daysUntilVote > 0 ? `Voting starts in ${daysUntilVote} day${daysUntilVote > 1 ? 's' : ''}` : 'Voting starts Today!',
+        icon: <MdEventAvailable />,
+        iconColor: 'secondary.main',
+        link: `/dao/elections/${election.electionName}`,
+        sortPriority: 2, // High priority, just after active voting
+        sortTimestamp: startTime.getTime(),
+      });
+    }
+
+    // 4. Election Registration Starting Soon (Medium Priority)
     else if (regStartTime > now && regStartTime <= fourDaysFromNow) {
       const daysUntil = Math.ceil((regStartTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       announcements.push({

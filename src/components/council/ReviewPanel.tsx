@@ -102,7 +102,7 @@ const CouncilReviewPanel = ({token, setSnackbar}: any) => {
     const now = Date.now();
     const filteredReports = reports.filter(report => {
       const postAgeInMs = now - report.timestamp * 1000;
-      return votingPostIds.has(report.postId) && postAgeInMs > 24 * 60 * 60 * 1000;
+      return votingPostIds.has(report.postId) && postAgeInMs > 1 * 30 * 60 * 1000;
     });
 
     // Fetch hidden posts

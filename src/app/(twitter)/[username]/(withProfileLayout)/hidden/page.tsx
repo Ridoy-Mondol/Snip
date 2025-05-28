@@ -1,6 +1,7 @@
 "use client";
 
 import React, {useState, useEffect, useContext} from "react";
+import { JsonRpc } from 'eosjs';
 import {
   Box,
   Typography,
@@ -21,14 +22,16 @@ import { FiAlertTriangle } from "react-icons/fi";
 import { grey, red, blue } from "@mui/material/colors";
 
 import { AuthContext } from "@/context/AuthContext";
-import { TweetProps } from "@/types/TweetProps";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import CircularLoading from "@/components/misc/CircularLoading";
 import { SnackbarProps } from "@/types/SnackbarProps";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 
 export default function HiddenPage() {
-  const [hiddenPosts, setHiddenPosts] = useState<TweetProps[]>([]);
+  const [hiddenPosts, setHiddenPosts] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const [isHiddenLoaded, setIsHiddenLoaded] = useState(false);
+  const [isReportsLoaded, setIsReportsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAppealDialogOpen, setIsAppealDialogOpen] = useState (false);
   const [reason, setReason] = useState ("");
@@ -36,6 +39,8 @@ export default function HiddenPage() {
   const [snackbar, setSnackbar] = useState<SnackbarProps>({ message: "", severity: "success", open: false });
 
   const { token } = useContext(AuthContext);
+  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
+  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
 
   useEffect(() => {
     if (!token?.id) return;
@@ -53,6 +58,7 @@ export default function HiddenPage() {
 
         const data = await res.json();
         setHiddenPosts(data.hiddenPosts);
+        setIsHiddenLoaded(true);
       } catch (err) {
         console.error("Error fetching hidden posts:", err);
       } finally {
@@ -62,6 +68,39 @@ export default function HiddenPage() {
      
     fetchHiddenPosts();
   }, [token])
+  
+  const fetchReports = async () => {
+    try {
+    const rpc = new JsonRpc(endpoint);
+    const result = await rpc.get_table_rows({
+        json: true,
+        code: contractAcc,
+        scope: contractAcc,
+        table: 'modreports',
+        limit: 100,
+    });
+      setReports(result.rows);
+      setIsReportsLoaded(true);
+    } catch (error) {
+    console.error('Failed to fetch proposal:', error);
+    }
+  };
+    
+  useEffect(() => {
+      fetchReports();
+  }, []);
+
+useEffect(() => {
+  if (isHiddenLoaded && isReportsLoaded) {
+    const merged = hiddenPosts.map(post => {
+      const match = reports.find(report => report.postId === post.id);
+      return match ? { ...post, timestamp: match.timestamp } : post;
+    });
+    setHiddenPosts(merged);
+  }
+}, [isHiddenLoaded, isReportsLoaded]);
+
+  console.log('hidden', hiddenPosts);
 
   const submitAppeal = async () => {
     if (!reason) return;
@@ -213,6 +252,7 @@ export default function HiddenPage() {
                   setIsAppealDialogOpen(true);
                   setPostId(post.id)
                 }}
+                disabled={new Date().getTime() > new Date(post?.timestamp * 1000).getTime() + 24 * 60 * 60 * 1000}
               >
                 Submit Appeal
               </Button>

@@ -99,8 +99,11 @@ const CouncilReviewPanel = ({token, setSnackbar}: any) => {
 
     const reports = reportsRes.rows;
 
-    // Filter reports where postId is in votingPostIds
-    const filteredReports = reports.filter(report => votingPostIds.has(report.postId));
+    const now = Date.now();
+    const filteredReports = reports.filter(report => {
+      const postAgeInMs = now - report.timestamp * 1000;
+      return votingPostIds.has(report.postId) && postAgeInMs > 24 * 60 * 60 * 1000;
+    });
 
     // Fetch hidden posts
     const res = await fetch("/api/tweets/status/get", {
@@ -133,7 +136,6 @@ const CouncilReviewPanel = ({token, setSnackbar}: any) => {
       })
     );
 
-    console.log('Reports with Appeal Reasons:', reportsWithDetails);
     setActiveReports(reportsWithDetails);
     return reportsWithDetails;
 

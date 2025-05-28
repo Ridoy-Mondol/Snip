@@ -33,6 +33,7 @@ const Election = () => {
   const [elections, setElections] = useState<any[]>([]);
   const [recallData, setRecallData] = useState<any[]>([]);
   const [founder, setFounder] = useState<any[]> ([]);
+  const [permission, setPermission] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newElectionName, setNewElectionName] = useState('');
   const [newRegistrationStartTime, setNewRegistrationStartTime] = useState('');
@@ -102,14 +103,18 @@ const Election = () => {
       console.error('Failed to fetch member:', error);
     }
   };
-  
-  const permission =
-    !!activeSession?.auth?.actor?.toString() &&
-    Array.isArray(founder) &&
-    founder.some(
-    (founder: any) =>
-      founder?.account === activeSession.auth.actor.toString()
-  );
+
+  useEffect(() => {
+    const actor = activeSession?.auth?.actor?.toString?.();
+    if (actor && Array.isArray(founder)) {
+      const hasPermission = founder.some(
+        (f: any) => f?.account === actor
+      );
+      setPermission(hasPermission);
+    } else {
+      setPermission(false);
+    }
+  }, [founder, activeSession?.auth?.actor]);
 
   useEffect(() => {
     fetchElections();
@@ -455,7 +460,7 @@ const Election = () => {
         <Button variant="contained" color="secondary" onClick={openCreateDialog} style={{ marginBottom: '10px' }}>
           Create New Election
         </Button>
-       )} 
+      )} 
       
     {/* council member elections */}
     <Box sx={{ width: '100%', my: '2rem' }}>

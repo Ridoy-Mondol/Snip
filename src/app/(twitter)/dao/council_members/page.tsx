@@ -29,6 +29,9 @@ const CouncilMembersPage = () => {
   const [selectedElection, setSelectedElection] = useState<any>(null);
   const [recallData, setRecallData] = useState<any>(null);
   const [members, setMembers] = useState<any>([]);
+  const [isMember, setIsMember] = useState(false);
+  const [founders, setFounders] = useState<any>([]);
+  const [isFounder, setIsFounder] = useState(false);
   const [showRecallForm, setShowRecallForm] = useState(false);
   const [recalledMember, setRecalledMember] = useState("");
   const [recalledMod, setRecalledMod] = useState("");
@@ -48,6 +51,7 @@ const CouncilMembersPage = () => {
     fetchElections();
     fetchRecallElections();
     fetchMembers();
+    fetchFounders();
   }, [])
 
   const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
@@ -129,22 +133,48 @@ const CouncilMembersPage = () => {
       console.error('Failed to fetch member:', error);
     }
   };
-  
-  const isMember =
-  !!activeSession?.auth?.actor?.toString() &&
-  Array.isArray(members) &&
-  members.some(
-    (member: any) =>
-      member?.account === activeSession.auth.actor.toString()
-  );
 
-  const isFounder =
-  !!activeSession?.auth?.actor?.toString() &&
-  Array.isArray(members) &&
-  members.some(
-    (member: any) =>
-      member?.account === activeSession.auth.actor.toString() && member?.isFoundingMember === true
-  );
+  useEffect(() => {
+    const actor = activeSession?.auth?.actor?.toString?.();
+    if (actor && Array.isArray(members)) {
+      const isMatch = members.some(
+        (member: any) => member?.account === actor
+      );
+      setIsMember(isMatch);
+    } else {
+      setIsMember(false);
+    }
+  }, [members, activeSession?.auth?.actor]);
+
+  const fetchFounders = async () => {
+    try {
+      const rpc = new JsonRpc(endpoint);
+      const result = await rpc.get_table_rows({
+        json: true,
+        code: contractAcc,
+        scope: contractAcc,
+        table: 'founders',
+        limit: 100,
+      });
+        
+      setFounders(result.rows);
+
+    } catch (error) {
+      console.error('Failed to fetch member:', error);
+    }
+  };
+
+  useEffect(() => {
+    const actor = activeSession?.auth?.actor?.toString?.();
+    if (actor && Array.isArray(founders)) {
+      const isMatch = founders.some(
+        (founder: any) => founder?.account === actor
+      );
+      setIsFounder(isMatch);
+    } else {
+      setIsFounder(false);
+    }
+  }, [founders, activeSession?.auth?.actor]);
 
   const declareMembers = async () => {
     if (!activeSession) {

@@ -409,8 +409,8 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
                     <TableCell>Recipient</TableCell>
                     <TableCell>Amount(SNIPS)</TableCell>
                     <TableCell>Category</TableCell>
-                    <TableCell>Approved</TableCell>
-                    <TableCell>Rejected</TableCell>
+                    <TableCell>ApprovedBy</TableCell>
+                    <TableCell>RejectedBy</TableCell>
                     <TableCell>Action</TableCell>
                     <TableCell>Control</TableCell>
                   </TableRow>

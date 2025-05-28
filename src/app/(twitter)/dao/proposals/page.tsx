@@ -44,7 +44,8 @@ import EmptyState from "@/components/dashboard/EmptyState";
 
 export default function ProposalPage() {
   const [tab, setTab] = useState<'active' | 'past'>('active');
-  const [members, setMembers] = useState<any>([]);
+  const [founders, setFounders] = useState<any>([]);
+  const [isFounder, setIsFounder] = useState(false);
   const [isPropDialogOpen, setIsPropDialogOpen] = useState(false);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -65,7 +66,7 @@ export default function ProposalPage() {
 
   useEffect(() => {
     fetchProposals();
-    fetchMembers();
+    fetchFounders();
   }, []);
 
   const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
@@ -91,31 +92,33 @@ export default function ProposalPage() {
     }
   };
 
-  const fetchMembers = async () => {
+  const fetchFounders = async () => {
     try {
       const rpc = new JsonRpc(endpoint);
       const result = await rpc.get_table_rows({
         json: true,
         code: contractAcc,
         scope: contractAcc,
-        table: 'council',
+        table: 'founders',
         limit: 100,
       });
   
-      setMembers(result.rows);
+      setFounders(result.rows);
   
     } catch (error) {
       console.error('Failed to fetch member:', error);
     }
   };
-  
-  const isFounder =
-  !!activeSession?.auth?.actor?.toString() &&
-  Array.isArray(members) &&
-  members.some(
-    (member: any) =>
-      member?.account === activeSession.auth.actor.toString() && member?.isFoundingMember === true
-  );
+
+  useEffect(() => {
+    const actor = activeSession?.auth?.actor?.toString();
+    const result =
+      !!actor &&
+      Array.isArray(founders) &&
+      founders.some((founder: any) => founder?.account === actor);
+
+    setIsFounder(result);
+  }, [activeSession, founders]);
 
   const submitProposal = async () => {
     if (!activeSession) {

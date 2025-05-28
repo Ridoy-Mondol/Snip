@@ -322,7 +322,7 @@ const CouncilMembersPage = () => {
         Explore the Snipverse Council Members section to learn about our elected leaders and their roles. Stay informed about their contributions to our decentralized community.
       </Typography>
 
-      <Stack spacing={2} direction="row" flexWrap="wrap" gap={2}>
+      <Stack spacing={2} direction="row" flexWrap="wrap" gap={2} my={2}>
         {(isFounder && selectedElection) && (
           <Button variant="contained" color="primary" onClick={declareMembers}>
             Declare Members

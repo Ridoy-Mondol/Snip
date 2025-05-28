@@ -315,7 +315,7 @@ const CouncilMembersPage = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
        <Typography variant="h4"
-        fontWeight={600} gutterBottom>
+        fontWeight={700} gutterBottom>
         <FaUsersCog style={{ marginRight: 8 }} /> Snipverse Council Members
       </Typography>
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
@@ -343,7 +343,7 @@ const CouncilMembersPage = () => {
       </Stack>
 
       { authorizedAccounts.includes(activeSession?.auth?.actor) &&
-      <Button variant="outlined" color="success" onClick={() => setFoundersForm(true)}>
+      <Button variant="outlined" color="success" sx={{ mb: 2 }} onClick={() => setFoundersForm(true)}>
         Set Founders
       </Button>
       }

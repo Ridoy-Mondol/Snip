@@ -16,7 +16,7 @@ import {
   Box,
   Button,
 } from "@mui/material";
-import { FaCaretRight } from "react-icons/fa";
+import { FaCaretRight, FaUserShield } from "react-icons/fa";
 import { MdGavel, MdPersonAdd } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import EmptyState from "../dashboard/EmptyState";
@@ -212,7 +212,8 @@ const ModeratorManagement = ({
 
   return (
     <>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h5" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 4 }}>
+        <FaUserShield />
         Moderator Management
       </Typography>
       <Paper sx={{ mb: 2, p: 2 }}>

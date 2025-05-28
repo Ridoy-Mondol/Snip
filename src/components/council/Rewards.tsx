@@ -353,8 +353,8 @@ const CouncilActions = ({ setFundForm, activeSession, connectWallet, setSnackbar
   }
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h6" gutterBottom>
+    <Box sx={{ my: 4 }}>
+      <Typography variant="h5" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
         <FaWallet style={{ marginRight: 8 }} /> Community Rewards Wallet Allocation
       </Typography>
 

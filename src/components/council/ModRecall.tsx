@@ -20,6 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { AiOutlineCheckCircle, AiOutlineCloseCircle } from 'react-icons/ai';
+import { MdHowToVote } from 'react-icons/md';
 import { useWallet } from "@/context/WalletContext";
 import { getUser } from "@/utilities/fetch";
 import EmptyState from '../dashboard/EmptyState';
@@ -165,7 +166,8 @@ const ModeratorRecallSection = ({ getFullURL, setSnackbar }: ModeratorRecallSect
 
   return (
     <Box>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h5" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 5 }}>
+        <MdHowToVote />
         Moderator Recall Votes
       </Typography>
 

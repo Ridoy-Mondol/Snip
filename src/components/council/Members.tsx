@@ -12,7 +12,7 @@ import {
   Box,
   Button,
 } from "@mui/material";
-import { FaCaretRight } from "react-icons/fa";
+import { FaCaretRight, FaUsers } from "react-icons/fa";
 import { MdGavel } from "react-icons/md";
 import { MdGroups } from "react-icons/md";
 
@@ -63,7 +63,8 @@ const Members = ({
 
   return (
     <>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h5" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 4 }}>
+        <FaUsers />
         Council Overview
       </Typography>
       <Paper sx={{ mb: 2, p: 2 }}>

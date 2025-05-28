@@ -26,7 +26,7 @@ import {
   FaUsersCog,
   FaCaretRight,
 } from 'react-icons/fa';
-import { MdGavel } from 'react-icons/md';
+import { MdGavel, MdSupervisorAccount } from 'react-icons/md';
 
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
@@ -231,7 +231,7 @@ const ModeratorPage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
-       <Typography variant="h4" gutterBottom>
+       <Typography variant="h4" fontWeight={700} gutterBottom>
         <FaUsersCog style={{ marginRight: 8 }} /> Snipverse Moderators
       </Typography>
       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
@@ -265,7 +265,8 @@ const ModeratorPage = () => {
       {
       moderators?.length > 0 ?
       <>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h5" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 4 }}>
+        <MdSupervisorAccount />
         Moderator Overview
       </Typography>
       <Paper sx={{ mb: 2, p: 2 }}>

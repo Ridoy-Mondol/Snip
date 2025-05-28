@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import { AiOutlineEye, AiOutlineCheckCircle, AiOutlineCloseCircle, AiOutlineSend } from 'react-icons/ai';
 import { FiAlertTriangle } from 'react-icons/fi';
+import { MdGroups } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import EmptyState from '@/components/dashboard/EmptyState';
 import { useWallet } from "@/context/WalletContext";
@@ -246,12 +247,21 @@ const CouncilReviewPanel = ({token, setSnackbar}: any) => {
 
 
   if (activeReports.length === 0) {
-    return <EmptyState message="No active reports under review." />;
+    return (
+      <> 
+       <Typography variant="h5" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 5 }}>
+        <MdGroups />
+        Council Review Panel
+      </Typography>
+       <EmptyState message="No active reports under review." />
+      </>
+    );
   }
 
   return (
     <>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h5" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 5 }}>
+        <MdGroups />
         Council Review Panel
       </Typography>
       {activeReports.map((elem) => (

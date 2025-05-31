@@ -1,6 +1,5 @@
 "use client"
 import React, {useState, useEffect} from 'react';
-import { JsonRpc } from 'eosjs';
 import { FiActivity } from "react-icons/fi";
 import { Box, Container, Grid, Typography } from "@mui/material";
 import DaoHeader from "@/components/dashboard/DaoHeader";
@@ -10,6 +9,7 @@ import RecentProposals from '@/components/dashboard/RecentProposals';
 import RecentTransaction from '@/components/dashboard/RecentTransaction';
 import AboutSection from '@/components/dashboard/About';
 import Announcements from '@/components/dashboard/Announcements';
+import { fetchTableRows } from '@/components/blockchain/fetchTable';
 
 export default function DaoDashboard() {
   const [election, setElection] = useState<any[]>([]);
@@ -21,166 +21,64 @@ export default function DaoDashboard() {
   const [revenue, setRevenue] = useState<any>([]);
   const [transaction, setTransaction] = useState<any []>([])
 
-  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
-  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
   const tokenAcc = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ACC!;
 
-  
-  const fetchElections = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-        json: true,
-        code: contractAcc,
-        scope: contractAcc,
-        table: 'elections',
-        limit: 100,
-      });
-      setElection(result.rows);
-    } catch (error) {
-      console.error('Failed to fetch election:', error);
-    }
-  };
-
-  const fetchMembers = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-        json: true,
-        code: contractAcc,
-        scope: contractAcc,
-        table: 'council',
-        limit: 100,
-      });
-    
-      setMembers(result.rows);
-    
-    } catch (error) {
-      console.error('Failed to fetch member:', error);
-    }
-  };
-
-  const fetchWallet = async () => {
-    try {
-    const rpc = new JsonRpc(endpoint);
-    const result = await rpc.get_table_rows({
-      json: true,
-      code: contractAcc,
-      scope: contractAcc,
-      table: 'fundconfig',
-    });
-        
-    const account = result?.rows?.[0]?.communityWallet;
-    if (!account) return null;
-    setWallet(account);
-      
-    } catch (error) {
-      console.error('Failed to fetch community wallet:', error);
-    }
-  };
-      
-  useEffect (() => {
+  useEffect(() => {
+    const fetchWallet = async () => {
+      const rows = await fetchTableRows({ table: 'fundconfig', limit: 1 });
+      const account = rows?.[0]?.communityWallet;
+      if (account) setWallet(account);
+    };
     fetchWallet();
   }, []);
-      
-  const fetchToken = async () => {
-    try {
-    const rpc = new JsonRpc(endpoint);
-    const result = await rpc.get_table_rows({
-      json: true,
-      code: tokenAcc,
-      scope: wallet,
-      table: 'accounts',
-    });
-        
-    const balanceStr = result?.rows?.[0]?.balance;
-    if (!balanceStr) return null;
-        
-    const [amountStr] = balanceStr.split(' ');
-    const amount = parseFloat(amountStr);
-    setTotalBalance(amount);
-                
-    } catch (error) {
-      console.error('Failed to fetch reports:', error);
-    }
-  };
-    
-  const fetchModerators = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-        json: true,
-        code: contractAcc,
-        scope: contractAcc,
-        table: 'moderators',
-        limit: 100,
-      });
-          
-      setModerators(result.rows);
-    } catch (error) {
-      console.error('Failed to fetch moderators:', error);
-    }
-  };
-  const fetchProposals = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-        json: true,
-        code: contractAcc,
-        scope: contractAcc,
-        table: 'proposals',
-        limit: 100,
-      });
-      
-      setProposals(result.rows);
-    } catch (error) {
-      console.error('Failed to fetch moderator:', error);
-    }
-  };
-
-  const fetchRevenue = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-        json: true,
-        code: contractAcc,
-        scope: contractAcc,
-        table: 'revenues',
-      });
-        
-      setRevenue(result.rows);
-                   
-    } catch (error) {
-      console.error('Failed to fetch revenues:', error);
-    }
-  };
-
-  const fetchTransac = async () => {
-    try {
-    const rpc = new JsonRpc(endpoint);
-    const result = await rpc.get_table_rows({
-      json: true,
-      code: contractAcc,
-      scope: contractAcc,
-      table: 'fundprops',
-      limit: 100,
-    });
-    const filtered = result.rows.filter((t) => t.status === "approved")
-    setTransaction(filtered);
-    } catch (error) {
-      console.error('Failed to fetch election:', error);
-    }
-  };
 
   useEffect(() => {
-    fetchElections();
-    fetchMembers();
-    fetchModerators();
-    fetchProposals();
-    fetchToken();
-    fetchRevenue();
-    fetchTransac();
-  },[wallet]);
+    if (!wallet) return;
+
+    const fetchData = async () => {
+      const [
+        electionData,
+        memberData,
+        moderatorData,
+        proposalData,
+        revenueData,
+        tokenData,
+        transactionData,
+      ] = await Promise.all([
+        fetchTableRows({ table: 'elections' }),
+        fetchTableRows({ table: 'council' }),
+        fetchTableRows({ table: 'moderators' }),
+        fetchTableRows({ table: 'proposals' }),
+        fetchTableRows({ table: 'revenues' }),
+        fetchTableRows({
+          table: 'accounts',
+          code: tokenAcc,
+          scope: wallet,
+        }),
+        fetchTableRows({
+          table: 'fundprops',
+          filterFn: (rows) => rows.filter((t) => t.status === 'approved'),
+        }),
+      ]);
+
+      setElection(electionData);
+      setMembers(memberData);
+      setModerators(moderatorData);
+      setProposals(proposalData);
+      setRevenue(revenueData);
+
+      const balanceStr = tokenData?.[0]?.balance;
+      if (balanceStr) {
+        const [amountStr] = balanceStr.split(' ');
+        setTotalBalance(parseFloat(amountStr));
+      }
+
+      setTransaction(transactionData);
+    };
+
+    fetchData();
+  }, [wallet]);
+
   return (
     <Container maxWidth="lg">
       <DaoHeader />

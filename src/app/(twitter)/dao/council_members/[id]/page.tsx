@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { JsonRpc } from 'eosjs';
 import { Box, Card, CardContent, Typography, Grid, Container, Avatar } from '@mui/material';
 import { FaTasks, FaVoteYea, FaDollarSign, FaStar } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -11,6 +10,7 @@ import { getFullURL } from "@/utilities/misc/getFullURL";
 import { StatCard } from "@/components/dashboard/StatCard";
 import PieChart from '@/components/chart/PieChart';
 import BarChart from '@/components/chart/BarChart';
+import { fetchTableRows } from '@/components/blockchain/fetchTable';
 
 // Colors for Pie Charts
 const PIE_COLORS = [
@@ -43,56 +43,39 @@ export default function MemberProfile({ params }: { params: { id: string } }) {
 
   const member = params.id;
 
-  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
-  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
-
-  const fetchMemPerformance = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-       json: true,
-       code: contractAcc,
-       scope: contractAcc,
-       table: 'memberperf',
-      });
-
-      const memberRecords = result.rows.filter((m) => m.member === member)
-  
-      setPerformanceData(memberRecords);
-             
-    } catch (error) {
-      console.error('Failed to fetch performance:', error);
-    }
-  };
-
-  const fetchMembers = async () => {
-    try {
-    const rpc = new JsonRpc(endpoint);
-    const result = await rpc.get_table_rows({
-      json: true,
-      code: contractAcc,
-      scope: contractAcc,
-      table: 'council',
-      limit: 100,
-    });
-    const currentMember = result.rows.filter((m) => (m.account === member));
-  
-    const memberImg = await getCachedUser(currentMember[0].userName)
-
-    setMemberInfo({
-      status: currentMember[0].status,
-      image: memberImg.photoUrl,
-    });    
-  
-    } catch (error) {
-    console.error('Failed to fetch members:', error);
-    }
-  };
-     
   useEffect(() => {
-    fetchMemPerformance();
-    fetchMembers();
-  }, [])
+  const fetchData = async () => {
+    try {
+      const [performanceRows, memberRows] = await Promise.all([
+        fetchTableRows({
+          table: 'memberperf',
+          filterFn: (rows) => rows.filter((m) => m.member === member),
+        }),
+        fetchTableRows({
+          table: 'council',
+          filterFn: (rows) => rows.filter((m) => m.account === member),
+        }),
+      ]);
+
+      setPerformanceData(performanceRows);
+
+      const currentMember = memberRows?.[0];
+      if (currentMember) {
+        const memberImg = await getCachedUser(currentMember.userName);
+        setMemberInfo({
+          status: currentMember.status,
+          image: memberImg?.photoUrl ?? null,
+        });
+      }
+
+    } catch (error) {
+      console.error('Failed to fetch performance or member info:', error);
+    }
+  };
+
+    fetchData();
+  }, []);
+
 
   const currentYearPerformance = useMemo(() => {
   const currentYear = new Date().getFullYear();

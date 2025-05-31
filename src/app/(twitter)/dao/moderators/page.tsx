@@ -1,6 +1,5 @@
 "use client"
 import React, { useState, useEffect, useContext } from 'react';
-import { JsonRpc } from 'eosjs';
 import { useRouter } from "next/navigation";
 import {
   Container,
@@ -35,6 +34,7 @@ import { useWallet } from "@/context/WalletContext";
 import CustomSnackbar from "@/components/misc/CustomSnackbar";
 import { SnackbarProps } from "@/types/SnackbarProps";
 import EmptyState from '@/components/dashboard/EmptyState';
+import { fetchTableRows } from '@/components/blockchain/fetchTable';
 
 const ModeratorPage = () => {
   const [moderators, setModerators] = useState<any>([]);
@@ -48,11 +48,6 @@ const ModeratorPage = () => {
 
   const { token } = useContext(AuthContext);
   const router = useRouter();
-
-  useEffect(() => {
-    fetchModerators();
-    fetchMembers();
-  }, []);
   
   const getCachedUser = async (username: string) => {
     const key = `user_${username}`;
@@ -66,54 +61,38 @@ const ModeratorPage = () => {
     return userData.user;
   };
 
-  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
   const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
-  
-  const fetchModerators = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-        json: true,
-        code: contractAcc,
-        scope: contractAcc,
-        table: 'moderators',
-        limit: 100,
-      });
 
-      const userFetchPromises = result.rows.map(async (moderator) => {
-        try {
-          const userData = await getCachedUser(moderator.userName);
-          return { ...moderator, photoUrl: userData.photoUrl };
-        } catch (error) {
-          console.error(`Failed to fetch user data for ${moderator.userName}:`, error);
-          return { ...moderator, photoUrl: null };
-        }
-      });
-        
-      const modWithPhotos = await Promise.all(userFetchPromises);
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const [moderatorRows, memberRows] = await Promise.all([
+        fetchTableRows({ table: 'moderators' }),
+        fetchTableRows({ table: 'council' }),
+      ]);
+
+      const modWithPhotos = await Promise.all(
+        moderatorRows.map(async (moderator) => {
+          try {
+            const userData = await getCachedUser(moderator.userName);
+            return { ...moderator, photoUrl: userData?.photoUrl ?? null };
+          } catch (error) {
+            console.error(`Failed to fetch user data for ${moderator.userName}:`, error);
+            return { ...moderator, photoUrl: null };
+          }
+        })
+      );
+
       setModerators(modWithPhotos);
+      setMembers(memberRows);
     } catch (error) {
-      console.error('Failed to fetch moderator:', error);
+      console.error('Failed to fetch moderators or members:', error);
     }
   };
 
-  const fetchMembers = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-        json: true,
-        code: contractAcc,
-        scope: contractAcc,
-        table: 'council',
-        limit: 100,
-      });
-  
-      setMembers(result.rows);
-  
-    } catch (error) {
-      console.error('Failed to fetch member:', error);
-    }
-  };
+    fetchData();
+  }, []);
+
   
   const isMember =
   !!activeSession?.auth?.actor?.toString() &&

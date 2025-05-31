@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { JsonRpc } from 'eosjs';
 import { Box, Card, CardContent, Typography, Grid, Container, Avatar } from '@mui/material';
 import { FaTasks, FaVoteYea, FaFlag, FaStar } from 'react-icons/fa';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 import { getUser } from "@/utilities/fetch";
 import { getFullURL } from "@/utilities/misc/getFullURL";
 import { StatCard } from "@/components/dashboard/StatCard";
 import PieChart from '@/components/chart/PieChart';
 import GeneralBarChart from '@/components/chart/BarChart';
+import { fetchTableRows } from '@/components/blockchain/fetchTable';
 
 // Colors for Pie Charts
 const PIE_COLORS = [
@@ -40,55 +40,37 @@ export default function MemberProfile({ params }: { params: { id: string } }) {
 
   const moderator = params.id;
 
-  const endpoint = process.env.NEXT_PUBLIC_PROTON_ENDPOINT!;
-  const contractAcc = process.env.NEXT_PUBLIC_CONTRACT!;
-
-  const fetchModPerformance = async () => {
-    try {
-      const rpc = new JsonRpc(endpoint);
-      const result = await rpc.get_table_rows({
-       json: true,
-       code: contractAcc,
-       scope: contractAcc,
-       table: 'modperf',
-      });
-
-      const modRecords = result.rows.filter((m) => m.moderator === moderator)
-  
-      setPerformanceData(modRecords);
-             
-    } catch (error) {
-      console.error('Failed to fetch performance:', error);
-    }
-  };
-
-  const fetchModerators = async () => {
-    try {
-    const rpc = new JsonRpc(endpoint);
-    const result = await rpc.get_table_rows({
-      json: true,
-      code: contractAcc,
-      scope: contractAcc,
-      table: 'moderators',
-      limit: 100,
-    });
-    const currentMod = result.rows.filter((m) => (m.account === moderator));
-  
-    const modImg = await getCachedUser(currentMod[0].userName)
-
-    setModInfo({
-      image: modImg.photoUrl,
-    });    
-  
-    } catch (error) {
-    console.error('Failed to fetch moderator:', error);
-    }
-  };
-     
   useEffect(() => {
-    fetchModPerformance();
-    fetchModerators();
-  }, [])
+  const fetchData = async () => {
+    try {
+      const [modPerfRows, moderatorRows] = await Promise.all([
+        fetchTableRows({
+          table: 'modperf',
+          filterFn: (rows) => rows.filter((m) => m.moderator === moderator),
+        }),
+        fetchTableRows({
+          table: 'moderators',
+          filterFn: (rows) => rows.filter((m) => m.account === moderator),
+        }),
+      ]);
+
+      setPerformanceData(modPerfRows);
+
+      const currentMod = moderatorRows?.[0];
+      if (currentMod) {
+        const modImg = await getCachedUser(currentMod.userName);
+        setModInfo({
+          image: modImg?.photoUrl ?? null,
+        });
+      }
+
+    } catch (error) {
+      console.error('Failed to fetch moderator or performance:', error);
+    }
+  };
+
+    fetchData();
+  }, []);
 
   const currentYearPerformance = useMemo(() => {
   const currentYear = new Date().getFullYear();
